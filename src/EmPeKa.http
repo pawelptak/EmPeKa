@@ -1,0 +1,6 @@
+@EmPeKa_HostAddress = http://localhost:5177
+
+GET {{EmPeKa_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
