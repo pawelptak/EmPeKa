@@ -110,20 +110,6 @@ Sample response:
 - `ASPNETCORE_URLS` - URLs to listen on
 - `GtfsDataPath` - Path to GTFS data
 
-## Architecture
-
-- **Controllers** - API controllers (`StopsController`, `HealthController`)
-- **Services** - Business logic (`GtfsService`, `VehicleService`, `TransitService`)
-- **Models** - Data models (GTFS, API responses, vehicle positions)
-- **Caching** - In-memory cache for vehicle positions (30s TTL)
-- **Background updates** - Automatic GTFS data updates (every 24h)
-
-## System Requirements
-
-- .NET 10 (or Docker)
-- ~100MB disk space for GTFS data
-- Internet access (for data download)
-
 ## Monitoring
 
 The API exposes a `/health` endpoint that returns:
