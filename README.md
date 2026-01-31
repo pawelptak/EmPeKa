@@ -67,7 +67,7 @@ Sample response:
 ```json
 {
   "stopId": "123456",
-  "stopName": "Dworzec G³ówny",
+  "stopName": "Dworzec Główny",
   "arrivals": [
     {
       "line": "14",
@@ -77,7 +77,7 @@ Sample response:
     },
     {
       "line": "33",
-      "direction": "Leœnica",
+      "direction": "Leśnica",
       "etaMin": 5,
       "isRealTime": false
     }
@@ -87,7 +87,7 @@ Sample response:
 
 ## Data Sources
 
-1. **GTFS Wroc³aw** - Timetable files (updated daily)
+1. **GTFS Wroclaw** - Timetable files (updated daily)
    - URL: https://www.wroclaw.pl/open-data/87b09b32-f076-4475-8ec9-6020ed1f9ac0/
 
 2. **Real-time vehicle positions** - Current GPS positions of buses and trams (30s cache)
