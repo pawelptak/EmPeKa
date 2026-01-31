@@ -1,6 +1,6 @@
-# EmPeKa - MPK Wroc³aw API
+# EmPeKa - MPK Wroclaw API
 
-Private API for retrieving public transport arrival times for MPK Wroc³aw, using GTFS data and real-time vehicle positions.
+Private API for retrieving public transport arrival times for MPK Wroclaw, using GTFS data and real-time vehicle positions.
 
 ## Features
 
@@ -67,7 +67,7 @@ Sample response:
 ```json
 {
   "stopId": "123456",
-  "stopName": "Dworzec G³ówny",
+  "stopName": "Dworzec GÂ³Ã³wny",
   "arrivals": [
     {
       "line": "14",
@@ -77,7 +77,7 @@ Sample response:
     },
     {
       "line": "33",
-      "direction": "Leœnica",
+      "direction": "LeÅ“nica",
       "etaMin": 5,
       "isRealTime": false
     }
@@ -87,7 +87,7 @@ Sample response:
 
 ## Data Sources
 
-1. **GTFS Wroc³aw** - Timetable files (updated daily)
+1. **GTFS WrocÂ³aw** - Timetable files (updated daily)
    - URL: https://www.wroclaw.pl/open-data/87b09b32-f076-4475-8ec9-6020ed1f9ac0/
 
 2. **Real-time vehicle positions** - Current GPS positions of buses and trams (30s cache)
@@ -131,7 +131,3 @@ The API exposes a `/health` endpoint that returns:
 - Number of loaded GTFS stops
 - Number of active real-time vehicles
 - Last data update time
-
-## License
-
-MPK Wroc³aw data is provided under an open license.
