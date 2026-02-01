@@ -1,11 +1,12 @@
 services:
   empeka-api:
-    build: .
+    user: root
     container_name: empeka-api
+    image: pawelptak/empeka-api:latest
     ports:
-      - "8080:8080"
+      - "2077:8080"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:8080
     volumes:
       - ./data:/app/data
