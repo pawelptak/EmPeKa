@@ -23,9 +23,8 @@ RUN mkdir -p /app/data/gtfs
 # Copy published app
 COPY --from=build /app/publish .
 
-# Create non-root user
-RUN adduser --disabled-password --gecos '' appuser && chown -R appuser:appuser /app
-USER appuser
+# Use built-in non-root user
+USER app
 
 # Expose port
 EXPOSE 8080
