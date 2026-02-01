@@ -1,0 +1,39 @@
+name: Update Docker Image
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Docker Image"]
+    types:
+      - completed
+  workflow_dispatch:  # Allows manual trigger from the GitHub UI
+      
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:          
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history, including tags
+        
+      - name: Get Version from GitHub Tag or Commit SHA
+        id: version
+        run: |
+          # Try to get the latest tag; if no tag, get the short commit SHA
+          VERSION=$(git tag --sort=-creatordate | head -n 1)
+          echo "VERSION=$VERSION"
+          echo "::set-output name=VERSION::$VERSION"
+    
+      - name: SSH to Server and Update Container
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.RASPBERRY_SSH_HOST }}
+          username: ${{ secrets.RASPBERRY_SSH_USER }}
+          key: ${{ secrets.RASPBERRY_SSH_PRIVATE_KEY }}
+          script: |
+            cd ApkiPawla/empeka
+            docker compose pull
+            APP_VERSION=${{ steps.version.outputs.VERSION }} docker compose up -d
+            docker image prune -f
