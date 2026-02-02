@@ -19,13 +19,17 @@ cd EmPeKa
 # Restore NuGet packages
 dotnet restore
 
-# Run the application
-dotnet run
+# Run the WebAPI
+dotnet run --project EmPeKa.WebAPI
+
+# Run the Frontend (ASP.NET Core MVC)
+dotnet run --project EmPeka.Frontend
 ```
 
-The application will be available at:
-- API: https://localhost:5001
-- Scalar UI: https://localhost:5001/scalar/v1
+The applications will be available at:
+- API (default): http://localhost:8080
+- Scalar UI: http://localhost:8080/scalar/v1
+- Frontend: https://localhost:5001 (or http://localhost:5000)
 
 ### Docker (Production)
 
@@ -100,7 +104,10 @@ Sample response:
 ```json
 {
   "GtfsDataPath": "./data/gtfs",
-  "Urls": "http://0.0.0.0:8080"
+  "Urls": "http://0.0.0.0:8080",
+  "EmPeKaApi": {
+    "BaseUrl": "http://localhost:8080/"
+  }
 }
 ```
 
@@ -109,6 +116,15 @@ Sample response:
 - `ASPNETCORE_ENVIRONMENT` - Environment (Development/Production)
 - `ASPNETCORE_URLS` - URLs to listen on
 - `GtfsDataPath` - Path to GTFS data
+- `EmPeKaApi__BaseUrl` - Frontend base URL to WebAPI
+
+### Frontend usage
+
+Open the frontend at `/` and provide `stopId` query to select stop:
+
+Examples:
+- https://localhost:5001/?stopId=123456
+- http://localhost:5000/?stopId=123456
 
 ## Monitoring
 

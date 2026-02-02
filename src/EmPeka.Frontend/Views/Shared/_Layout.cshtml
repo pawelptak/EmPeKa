@@ -1,0 +1,16 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - EmPeka.Frontend</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/EmPeka.Frontend.styles.css" asp-append-version="true" />
+</head>
+<body style="background:#000;color:#ff8c00;margin:0;">
+    <main>
+        @RenderBody()
+    </main>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

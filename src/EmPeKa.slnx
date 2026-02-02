@@ -1,3 +1,4 @@
 <Solution>
-  <Project Path="EmPeKa.csproj" />
+  <Project Path="EmPeka.Frontend/EmPeka.Frontend.csproj" Id="15b450e8-318e-452f-8970-3bc891868add" />
+  <Project Path="EmPeKa.WebAPI/EmPeKa.WebAPI.csproj" />
 </Solution>
