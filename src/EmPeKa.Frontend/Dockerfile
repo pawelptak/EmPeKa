@@ -17,10 +17,6 @@ WORKDIR /app
 # Install curl for health checks
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Create data directory
-RUN mkdir -p /app/data/gtfs
-RUN chown -R app:app /app/data
-
 # Copy published app
 COPY --from=build /app/publish .
 
@@ -32,7 +28,7 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
+  CMD curl -f http://localhost:8080/ || exit 1
 
 # Run the application
-ENTRYPOINT ["dotnet", "EmPeKa.WebAPI.dll"]
+ENTRYPOINT ["dotnet", "EmPeKa.Frontend.dll"]

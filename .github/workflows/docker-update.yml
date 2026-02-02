@@ -1,39 +1,39 @@
-name: Update Docker Image
+name: Update Docker Deployment
 
 on:
   workflow_run:
-    workflows: ["Build and Push Docker Image"]
+    workflows: ["Build and Push Docker Images"]
     types:
       - completed
-  workflow_dispatch:  # Allows manual trigger from the GitHub UI
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Image tag to deploy (default 'latest')"
+        required: false
+        default: latest
       
 jobs:
   deploy:
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
-    steps:          
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Fetch all history, including tags
-        
-      - name: Get Version from GitHub Tag or Commit SHA
-        id: version
+    steps:
+      - name: Determine tag
+        id: tag
         run: |
-          # Try to get the latest tag; if no tag, get the short commit SHA
-          VERSION=$(git tag --sort=-creatordate | head -n 1)
-          echo "VERSION=$VERSION"
-          echo "::set-output name=VERSION::$VERSION"
-    
-      - name: SSH to Server and Update Container
-        uses: appleboy/ssh-action@master
+          TAG="${{ inputs.image_tag }}"
+          if [ -z "$TAG" ]; then TAG=latest; fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: SSH to Server and Update Containers
+        uses: appleboy/ssh-action@v0.1.12
         with:
           host: ${{ secrets.RASPBERRY_SSH_HOST }}
           username: ${{ secrets.RASPBERRY_SSH_USER }}
           key: ${{ secrets.RASPBERRY_SSH_PRIVATE_KEY }}
           script: |
             cd ApkiPawla/empeka
-            docker compose pull
-            APP_VERSION=${{ steps.version.outputs.VERSION }} docker compose up -d
+            docker pull pawelptak/empeka-api:${{ steps.tag.outputs.tag }}
+            docker pull pawelptak/empeka-frontend:${{ steps.tag.outputs.tag }}
+            APP_VERSION=${{ steps.tag.outputs.tag }} docker compose up -d
             docker image prune -f

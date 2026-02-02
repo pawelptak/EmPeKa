@@ -20,16 +20,34 @@ jobs:
 
     defaults:
       run:
-        working-directory: ./src
+        shell: bash
 
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET 10 (preview)
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
-    - name: Restore dependencies
-      run: dotnet restore
-    - name: Build
-      run: dotnet build --no-restore
+        include-prerelease: true
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore Frontend
+      run: dotnet restore src/EmPeKa.Frontend/EmPeKa.Frontend.csproj
+
+    - name: Restore WebAPI
+      run: dotnet restore src/EmPeKa.WebAPI/EmPeKa.WebAPI.csproj
+
+    - name: Build Frontend (Release)
+      run: dotnet build src/EmPeKa.Frontend/EmPeKa.Frontend.csproj -c Release --no-restore
+
+    - name: Build WebAPI (Release)
+      run: dotnet build src/EmPeKa.WebAPI/EmPeKa.WebAPI.csproj -c Release --no-restore
       

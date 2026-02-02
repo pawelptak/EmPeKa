@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push Docker Images
 
 on:
   push:
@@ -13,35 +13,46 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Fetch all history, including tags
-      
+        fetch-depth: 0
+
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
-        
+
     - name: Log in to Docker Hub
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Get Version from GitHub Tag or Commit SHA
+   
+    - name: Compute short SHA
       id: version
+      shell: bash
       run: |
-        # Try to get the latest tag; if no tag, get the short commit SHA
-        VERSION=$(git tag --sort=-creatordate | head -n 1)
-        echo "VERSION=$VERSION"
-        echo "::set-output name=VERSION::$VERSION"
+        SHORT_SHA=$(git rev-parse --short HEAD)
+        echo "SHA=$SHORT_SHA" >> $GITHUB_OUTPUT
 
-    - name: Build and push
+    - name: Build and push API image
       uses: docker/build-push-action@v6
       with:
-        context: ./src
-        platforms: linux/arm64
+        context: ./src/EmPeKa.WebAPI
+        file: ./src/EmPeKa.WebAPI/Dockerfile
+        platforms: linux/amd64,linux/arm64
         push: true
         tags: |
           pawelptak/empeka-api:latest
-        build-args: |
-          VERSION=${{ env.VERSION }}
+          pawelptak/empeka-api:${{ steps.version.outputs.SHA }}
+
+    - name: Build and push Frontend image
+      uses: docker/build-push-action@v6
+      with:
+        context: ./src/EmPeKa.Frontend
+        file: ./src/EmPeKa.Frontend/Dockerfile
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: |
+          pawelptak/empeka-frontend:latest
+          pawelptak/empeka-frontend:${{ steps.version.outputs.SHA }}
