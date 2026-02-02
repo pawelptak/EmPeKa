@@ -1,9 +1,6 @@
 using EmPeka.Frontend.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
 
 namespace EmPeka.Frontend.Controllers
 {

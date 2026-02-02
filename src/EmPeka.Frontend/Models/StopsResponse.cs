@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace EmPeka.Frontend.Models
 {
     public class StopModel
