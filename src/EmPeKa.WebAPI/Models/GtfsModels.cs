@@ -6,7 +6,10 @@ public class Stop
 {
     [Name("stop_id")]
     public required string StopId { get; set; }
-    
+
+    [Name("stop_code")]
+    public required string StopCode { get; set; }
+
     [Name("stop_name")]
     public required string StopName { get; set; }
     

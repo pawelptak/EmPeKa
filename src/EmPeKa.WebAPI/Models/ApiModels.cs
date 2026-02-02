@@ -3,6 +3,7 @@ namespace EmPeKa.Models;
 public class StopInfo
 {
     public required string StopId { get; set; }
+    public required string StopCode { get; set; }
     public required string StopName { get; set; }
     public double Latitude { get; set; }
     public double Longitude { get; set; }
@@ -26,7 +27,7 @@ public class StopsResponse
 
 public class ArrivalsResponse
 {
-    public required string StopId { get; set; }
+    public required string StopCode { get; set; }
     public required string StopName { get; set; }
     public List<ArrivalInfo> Arrivals { get; set; } = new();
 }

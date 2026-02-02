@@ -53,26 +53,26 @@ public class StopsController : ControllerBase
     /// <summary>
     /// Gets upcoming arrivals for a specific stop
     /// </summary>
-    /// <param name="stopId">The stop ID to get arrivals for</param>
+    /// <param name="stopCode">The stop code to get arrivals for</param>
     /// <returns>List of upcoming arrivals</returns>
-    [HttpGet("{stopId}/arrivals")]
+    [HttpGet("{stopCode}/arrivals")]
     [ProducesResponseType(typeof(ArrivalsResponse), 200)]
     [ProducesResponseType(404)]
-    public async Task<ActionResult<ArrivalsResponse>> GetArrivals(string stopId, [FromQuery] int count = 3)
+    public async Task<ActionResult<ArrivalsResponse>> GetArrivals(string stopCode, [FromQuery] int count = 3)
     {
         try
         {
-            _logger.LogInformation("Getting arrivals for stop: {StopId} (count={Count})", stopId, count);
-            var arrivals = await _transitService.GetArrivalsAsync(stopId, count);
+            _logger.LogInformation("Getting arrivals for stopCode: {StopCode} (count={Count})", stopCode, count);
+            var arrivals = await _transitService.GetArrivalsAsync(stopCode, count);
             if (arrivals == null)
             {
-                return NotFound(new { error = $"Stop '{stopId}' not found" });
+                return NotFound(new { error = $"Stop code '{stopCode}' not found" });
             }
             return Ok(arrivals);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting arrivals for stop {StopId}", stopId);
+            _logger.LogError(ex, "Error getting arrivals for stopCode {StopCode}", stopCode);
             return StatusCode(500, new { error = "Internal server error" });
         }
     }

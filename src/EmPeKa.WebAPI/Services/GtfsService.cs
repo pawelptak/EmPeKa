@@ -171,6 +171,7 @@ public class GtfsService : IGtfsService
         var result = filteredStops.Select(stop => new StopInfo
         {
             StopId = stop.StopId,
+            StopCode = stop.StopCode,
             StopName = stop.StopName,
             Latitude = stop.StopLat,
             Longitude = stop.StopLon,

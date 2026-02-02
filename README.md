@@ -5,7 +5,7 @@ Private API for retrieving public transport arrival times for MPK Wroclaw, using
 ## Features
 
 - **GET /stops** - List of available stops with lines
-- **GET /stops/{stopId}/arrivals** - Upcoming arrivals for a given stop
+- **GET /stops/{stopCode}/arrivals** - Upcoming arrivals for a given stop
 - **GET /health** - API status and data availability
 
 ## Getting Started
@@ -55,10 +55,10 @@ The application will be available at:
 curl http://localhost:8080/stops
 ```
 
-### Get stop by ID
+### Get stop by stop code
 
 ```bash
-curl "http://localhost:8080/stops?stopId=123456"
+curl "http://localhost:8080/stops?stopCode=123456"
 ```
 
 ### Get arrivals for a stop
@@ -70,7 +70,7 @@ curl http://localhost:8080/stops/123456/arrivals
 Sample response:
 ```json
 {
-  "stopId": "123456",
+  "stopCode": "123456",
   "stopName": "Dworzec Główny",
   "arrivals": [
     {
@@ -88,14 +88,6 @@ Sample response:
   ]
 }
 ```
-
-## Data Sources
-
-1. **GTFS Wroclaw** - Timetable files (updated daily)
-   - URL: https://www.wroclaw.pl/open-data/87b09b32-f076-4475-8ec9-6020ed1f9ac0/
-
-2. **Real-time vehicle positions** - Current GPS positions of buses and trams (30s cache)
-   - URL: https://www.wroclaw.pl/open-data/api/action/datastore_search?resource_id=a9b3841d-e977-474e-9e86-8789e470a85a
 
 ## Configuration
 
@@ -120,11 +112,11 @@ Sample response:
 
 ### Frontend usage
 
-Open the frontend at `/` and provide `stopId` query to select stop:
+Open the frontend at `/` and provide `stopCode` query to select stop:
 
 Examples:
-- https://localhost:5001/?stopId=123456
-- http://localhost:5000/?stopId=123456
+- https://localhost:5001/?stopCode=123456
+- http://localhost:5000/?stopCode=123456
 
 ## Monitoring
 

@@ -2,7 +2,7 @@ namespace EmPeka.Frontend.Models;
 
 public class ArrivalsResponse
 {
-    public string StopId { get; set; } = string.Empty;
+    public string StopCode { get; set; } = string.Empty;
     public string StopName { get; set; } = string.Empty;
     public List<ArrivalItem> Arrivals { get; set; } = new();
 }

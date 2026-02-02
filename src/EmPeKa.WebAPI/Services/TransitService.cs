@@ -4,7 +4,7 @@ namespace EmPeKa.Services;
 
 public interface ITransitService
 {
-    Task<ArrivalsResponse?> GetArrivalsAsync(string stopId, int count = 3);
+    Task<ArrivalsResponse?> GetArrivalsAsync(string stopCode, int count = 3);
 }
 
 public class TransitService : ITransitService
@@ -20,21 +20,21 @@ public class TransitService : ITransitService
         _logger = logger;
     }
 
-    public async Task<ArrivalsResponse?> GetArrivalsAsync(string stopId, int count = 3)
+    public async Task<ArrivalsResponse?> GetArrivalsAsync(string stopCode, int count = 3)
     {
         try
         {
-            // Get stop information
-            var stops = await _gtfsService.GetStopsAsync(stopId);
-            var stop = stops.FirstOrDefault();
+            // Get stop information by stopCode
+            var allStops = await _gtfsService.GetStopsAsync();
+            var stop = allStops.FirstOrDefault(s => s.StopCode == stopCode);
             if (stop == null)
             {
-                _logger.LogWarning("Stop not found: {StopId}", stopId);
+                _logger.LogWarning("Stop not found: {StopCode}", stopCode);
                 return null;
             }
 
-            // Get scheduled stop times
-            var stopTimes = await _gtfsService.GetStopTimesForStopAsync(stopId);
+            // Get scheduled stop times by stopId
+            var stopTimes = await _gtfsService.GetStopTimesForStopAsync(stop.StopId);
             var now = DateTime.Now;
             var currentTime = TimeSpan.Parse(now.ToString("HH:mm:ss"));
 
@@ -154,14 +154,14 @@ public class TransitService : ITransitService
 
             return new ArrivalsResponse
             {
-                StopId = stopId,
+                StopCode = stop.StopCode,
                 StopName = stop.StopName,
                 Arrivals = arrivals
             };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get arrivals for stop {StopId}", stopId);
+            _logger.LogError(ex, "Failed to get arrivals for stopCode {StopCode}", stopCode);
             return null;
         }
     }

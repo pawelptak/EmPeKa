@@ -18,18 +18,18 @@ namespace EmPeka.Frontend.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index(string? stopId, int? count)
+        public async Task<IActionResult> Index(string? stopCode, int? count)
         {
-            if (string.IsNullOrWhiteSpace(stopId))
+            if (string.IsNullOrWhiteSpace(stopCode))
             {
                 // Default example stop, user can change via query
-                stopId = "1478";
+                stopCode = "10606";
             }
 
             ArrivalsResponse? model = null;
             try
             {
-                string url = $"stops/{stopId}/arrivals";
+                string url = $"stops/{stopCode}/arrivals";
                 if (count.HasValue)
                 {
                     url += $"?count={count.Value}";
@@ -38,11 +38,11 @@ namespace EmPeka.Frontend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to fetch arrivals for stop {StopId}", stopId);
+                _logger.LogError(ex, "Failed to fetch arrivals for stop {StopCode}", stopCode);
                 ModelState.AddModelError(string.Empty, "Nie uda³o siê pobraæ danych z API.");
             }
 
-            return View(model ?? new ArrivalsResponse { StopId = stopId ?? string.Empty, StopName = "Brak danych", Arrivals = [] });
+            return View(model ?? new ArrivalsResponse { StopCode = stopCode ?? string.Empty, StopName = "Brak danych", Arrivals = [] });
         }
 
         public IActionResult Privacy()

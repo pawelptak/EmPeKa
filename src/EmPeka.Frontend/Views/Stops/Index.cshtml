@@ -1,0 +1,22 @@
+@model IEnumerable<EmPeka.Frontend.Models.StopModel>
+@{
+    ViewData["Title"] = "Lista przystanków";
+}
+<h2>Lista przystanków</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nazwa</th>
+            <th>Kod</th>
+        </tr>
+    </thead>
+    <tbody>
+    @foreach (var stop in Model)
+    {
+        <tr>
+            <td>@stop.StopName</td>
+            <td>@stop.StopCode</td>
+        </tr>
+    }
+    </tbody>
+</table>
