@@ -45,6 +45,6 @@ Thumbs.db
 
 # Frontend artifacts
 # Ignoruj tylko artefakty builda, nie ca³y wwwroot
-src/EmPeka.Frontend/wwwroot/lib/
+src/EmPeKa.Frontend/wwwroot/lib/
 **/*.pubxml
 **/Properties/PublishProfiles/
