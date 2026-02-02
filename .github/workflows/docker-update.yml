@@ -18,13 +18,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Determine tag
-        id: tag
-        run: |
-          TAG="${{ inputs.image_tag }}"
-          if [ -z "$TAG" ]; then TAG=latest; fi
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-
       - name: SSH to Server and Update Containers
         uses: appleboy/ssh-action@v0.1.12
         with:
@@ -33,7 +26,5 @@ jobs:
           key: ${{ secrets.RASPBERRY_SSH_PRIVATE_KEY }}
           script: |
             cd ApkiPawla/empeka
-            docker pull pawelptak/empeka-api:${{ steps.tag.outputs.tag }}
-            docker pull pawelptak/empeka-frontend:${{ steps.tag.outputs.tag }}
-            APP_VERSION=${{ steps.tag.outputs.tag }} docker compose up -d
+            docker compose pull
             docker image prune -f
