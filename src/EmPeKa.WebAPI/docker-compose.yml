@@ -15,15 +15,6 @@ services:
     volumes:
       - ./data:/app/data
     restart: unless-stopped
-    # Resource limits for Raspberry Pi
-    deploy:
-      resources:
-        limits:
-          memory: 512M
-          cpus: '2'
-        reservations:
-          memory: 256M
-          cpus: '0.5'
     # healthcheck:
     #   test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
     #   interval: 60s
