@@ -1,13 +1,13 @@
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-WORKDIR /src
+WORKDIR /app
 
-# Copy project file and restore dependencies
-COPY *.csproj .
-RUN dotnet restore
+# Copy csproj and restore as distinct layers
+COPY EmPeKa.Frontend.csproj ./
+RUN dotnet restore EmPeKa.Frontend.csproj
 
-# Copy source code and build
-COPY . .
+# Copy everything else and build
+COPY . ./
 RUN dotnet publish -c Release -o /app/publish --no-restore
 
 # Runtime stage
