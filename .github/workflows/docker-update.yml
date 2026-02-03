@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: SSH to Server and Update Containers
-        uses: appleboy/ssh-action@v0.1.12
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.RASPBERRY_SSH_HOST }}
           username: ${{ secrets.RASPBERRY_SSH_USER }}
