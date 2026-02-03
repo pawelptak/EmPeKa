@@ -24,7 +24,7 @@ public class VehicleService : IVehicleService
     private const string TramLinesCacheKey = "tram_lines";
     private const string BusLinesCacheKey = "bus_lines";
     private const string ApiUrl = "https://mpk.wroc.pl/bus_position";
-    private readonly TimeSpan _cacheDuration = TimeSpan.FromSeconds(45); // Increased cache time
+    private readonly TimeSpan _cacheDuration = TimeSpan.FromSeconds(30); // Reduced cache time for more up-to-date positions
     private readonly TimeSpan _linesCacheDuration = TimeSpan.FromHours(1); // Cache lines for 1 hour
     private const int MaxConcurrentRequests = 5; // Limit concurrent HTTP requests
 
@@ -171,18 +171,23 @@ public class VehicleService : IVehicleService
                 return new List<VehiclePosition>();
             }
 
-            // Convert MPK positions to our VehiclePosition format
-            var positions = mpkPositions.Select(mpkPos => new VehiclePosition
-            {
-                Id = (int)(mpkPos.K % int.MaxValue), // Use K as ID (truncate if needed)
-                NrBoczny = mpkPos.K, // Use K as vehicle number
-                NrRej = null, // Not available in new API
-                Brygada = null, // Not available in new API
-                NazwaLinii = mpkPos.Name,
-                OstatniaPositionSzerokosc = mpkPos.X, // X is latitude
-                OstatniaPositionDlugosc = mpkPos.Y, // Y is longitude
-                DataAktualizacji = DateTime.Now // Use current time since API doesn't provide timestamp
-            }).ToList();
+            // Convert MPK positions to our VehiclePosition format with validation
+            var positions = mpkPositions
+                .Where(mpkPos => IsValidPosition(mpkPos.X, mpkPos.Y)) // Filter out invalid positions
+                .Select(mpkPos => new VehiclePosition
+                {
+                    Id = (int)(mpkPos.K % int.MaxValue), // Use K as ID (truncate if needed)
+                    NrBoczny = mpkPos.K, // Use K as vehicle number
+                    NrRej = null, // Not available in new API
+                    Brygada = null, // Not available in new API
+                    NazwaLinii = mpkPos.Name,
+                    OstatniaPositionSzerokosc = mpkPos.X, // X is latitude
+                    OstatniaPositionDlugosc = mpkPos.Y, // Y is longitude
+                    DataAktualizacji = DateTime.Now // Use current time since API doesn't provide timestamp
+                }).ToList();
+
+            _logger.LogInformation("Converted {ValidCount} valid positions out of {TotalCount} for {VehicleType} line {Line}", 
+                positions.Count, mpkPositions.Count, vehicleType, line);
 
             return positions;
         }
@@ -217,5 +222,39 @@ public class VehicleService : IVehicleService
 
         var results = await Task.WhenAll(tasks);
         return results.SelectMany(x => x).ToList();
+    }
+    
+    /// <summary>
+    /// Validates GPS coordinates to ensure they are reasonable for Wroc³aw area
+    /// </summary>
+    /// <param name="latitude">Latitude coordinate</param>
+    /// <param name="longitude">Longitude coordinate</param>
+    /// <returns>True if coordinates appear valid</returns>
+    private static bool IsValidPosition(double latitude, double longitude)
+    {
+        // Check for obviously invalid coordinates
+        if (latitude == 0.0 && longitude == 0.0)
+            return false; // Common API error response
+            
+        if (double.IsNaN(latitude) || double.IsNaN(longitude))
+            return false; // Invalid numbers
+            
+        if (double.IsInfinity(latitude) || double.IsInfinity(longitude))
+            return false; // Infinity values
+        
+        // Wroc³aw area bounds (with reasonable buffer)
+        // Wroc³aw is roughly at 51.1079° N, 17.0385° E
+        const double minLatitude = 50.8;   // South bound
+        const double maxLatitude = 51.4;   // North bound  
+        const double minLongitude = 16.7;  // West bound
+        const double maxLongitude = 17.3;  // East bound
+        
+        if (latitude < minLatitude || latitude > maxLatitude)
+            return false; // Outside Wroc³aw area
+            
+        if (longitude < minLongitude || longitude > maxLongitude)
+            return false; // Outside Wroc³aw area
+            
+        return true;
     }
 }

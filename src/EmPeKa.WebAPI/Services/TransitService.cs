@@ -24,6 +24,8 @@ public class TransitService : ITransitService
     {
         try
         {
+            _logger.LogInformation("Getting arrivals for stopCode: {StopCode} (count={Count})", stopCode, count);
+            
             // Get stop information by stopCode
             var allStops = await _gtfsService.GetStopsAsync();
             var stop = allStops.FirstOrDefault(s => s.StopCode == stopCode);
@@ -44,6 +46,8 @@ public class TransitService : ITransitService
                 .OrderBy(st => TimeSpan.Parse(st.ArrivalTime))
                 .Take(20) // Limit to next 20 arrivals
                 .ToList();
+
+            _logger.LogInformation("Found {Count} upcoming stop times for stop {StopCode}", upcomingStopTimes.Count, stopCode);
 
 
             // Ulepszony algorytm arrivals
@@ -74,9 +78,25 @@ public class TransitService : ITransitService
 
             var tramPositionsTask = tramLines.Count > 0 ? _vehicleService.GetVehiclesForLinesAsync(tramLines, "tram") : Task.FromResult(new List<VehiclePosition>());
             var busPositionsTask = busLines.Count > 0 ? _vehicleService.GetVehiclesForLinesAsync(busLines, "bus") : Task.FromResult(new List<VehiclePosition>());
-            await Task.WhenAll(tramPositionsTask, busPositionsTask);
-            var tramPositions = tramPositionsTask.Result;
-            var busPositions = busPositionsTask.Result;
+            
+            List<VehiclePosition> tramPositions;
+            List<VehiclePosition> busPositions;
+            
+            try
+            {
+                await Task.WhenAll(tramPositionsTask, busPositionsTask);
+                tramPositions = tramPositionsTask.Result;
+                busPositions = busPositionsTask.Result;
+                
+                _logger.LogInformation("Retrieved {TramCount} tram positions and {BusCount} bus positions", 
+                    tramPositions.Count, busPositions.Count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to retrieve vehicle positions, using schedule-only data");
+                tramPositions = new List<VehiclePosition>();
+                busPositions = new List<VehiclePosition>();
+            }
 
             foreach (var stopTime in upcomingStopTimes)
             {
@@ -89,11 +109,12 @@ public class TransitService : ITransitService
                 int etaMin = etaMinSchedule;
                 bool isRealTime = false;
                 VehiclePosition? vehicle = null;
-                // Lepsze dopasowanie pojazdu: linia + kierunek
+                // Lepsze dopasowanie pojazdu: linia + weryfikacja odleg³oœci i czasu
                 if (route.RouteType == 0)
                 {
                     vehicle = tramPositions
                         .Where(p => string.Equals(p.NazwaLinii, route.RouteShortName, StringComparison.OrdinalIgnoreCase))
+                        .Where(p => Haversine(stop.Latitude, stop.Longitude, p.OstatniaPositionSzerokosc, p.OstatniaPositionDlugosc) < 3000) // Max 3km radius
                         .OrderBy(p => Haversine(stop.Latitude, stop.Longitude, p.OstatniaPositionSzerokosc, p.OstatniaPositionDlugosc))
                         .FirstOrDefault();
                 }
@@ -101,25 +122,42 @@ public class TransitService : ITransitService
                 {
                     vehicle = busPositions
                         .Where(p => string.Equals(p.NazwaLinii, route.RouteShortName, StringComparison.OrdinalIgnoreCase))
+                        .Where(p => Haversine(stop.Latitude, stop.Longitude, p.OstatniaPositionSzerokosc, p.OstatniaPositionDlugosc) < 5000) // Max 5km radius
                         .OrderBy(p => Haversine(stop.Latitude, stop.Longitude, p.OstatniaPositionSzerokosc, p.OstatniaPositionDlugosc))
                         .FirstOrDefault();
                 }
                 if (vehicle != null)
                 {
                     double distance = Haversine(stop.Latitude, stop.Longitude, vehicle.OstatniaPositionSzerokosc, vehicle.OstatniaPositionDlugosc);
-                    if (distance < closeDistanceMeters)
+                    
+                    // Additional validation: check if distance calculation is reasonable
+                    if (double.IsNaN(distance) || double.IsInfinity(distance))
                     {
-                        etaMin = 0;
+                        _logger.LogWarning("Invalid distance calculation for vehicle {VehicleId} on line {Line} to stop {StopCode}", 
+                            vehicle.Id, route.RouteShortName, stopCode);
+                        // Skip this vehicle and use schedule-only ETA
                     }
                     else
                     {
-                        double etaSeconds = distance / avgSpeedMps;
-                        etaMin = Math.Max(0, (int)Math.Ceiling(etaSeconds / 60.0));
-                        // Nie pokazuj ETA real-time szybszego ni¿ rozk³ad
-                        if (etaMin < etaMinSchedule)
-                            etaMin = etaMinSchedule;
+                        // Tylko ustaw ETA = 0 jeœli pojazd jest bardzo blisko I przed rozk³adowym czasem przyjazdu
+                        if (distance < closeDistanceMeters && etaMinSchedule <= 5)
+                        {
+                            etaMin = 0;
+                            isRealTime = true;
+                        }
+                        else if (distance < 2000) // Tylko dla pojazdów w rozs¹dnej odleg³oœci
+                        {
+                            double etaSeconds = distance / avgSpeedMps;
+                            int calculatedEta = Math.Max(1, (int)Math.Ceiling(etaSeconds / 60.0)); // Minimum 1 minuta
+                            
+                            // U¿yj real-time ETA tylko jeœli jest rozs¹dny w porównaniu do rozk³adu
+                            if (calculatedEta <= etaMinSchedule + 10 && calculatedEta >= Math.Max(1, etaMinSchedule - 3))
+                            {
+                                etaMin = calculatedEta;
+                                isRealTime = true;
+                            }
+                        }
                     }
-                    isRealTime = true;
                 }
                 arrivals.Add(new ArrivalInfo
                 {
@@ -136,7 +174,7 @@ public class TransitService : ITransitService
                 .GroupBy(a => new { a.Line, a.Direction, a.ScheduledDeparture })
                 .Select(g => g.First())
                 .OrderBy(a => a.EtaMin)
-                .Take(count > 0 ? count : 3)
+                .Take(count <= 0 ? 3 : count) // Poprawiona logika: jeœli count <= 0, u¿yj domyœlnego 3
                 .ToList();
 
             // Haversine formula for distance in meters
@@ -152,12 +190,17 @@ public class TransitService : ITransitService
                 return R * c;
             }
 
-            return new ArrivalsResponse
+            var response = new ArrivalsResponse
             {
                 StopCode = stop.StopCode,
                 StopName = stop.StopName,
                 Arrivals = arrivals
             };
+            
+            _logger.LogInformation("Returning {Count} arrivals for stop {StopCode} (requested count: {RequestedCount})", 
+                arrivals.Count, stopCode, count);
+            
+            return response;
         }
         catch (Exception ex)
         {
