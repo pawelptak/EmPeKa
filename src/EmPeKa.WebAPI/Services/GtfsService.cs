@@ -57,6 +57,12 @@ public class GtfsService : IGtfsService
             await DownloadAndExtractGtfsData();
             await LoadGtfsData();
             _lastUpdate = DateTime.Now;
+            
+            // Force garbage collection after loading large datasets
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            
             _logger.LogInformation("GTFS data loaded successfully. Stops: {StopsCount}, Routes: {RoutesCount}, Trips: {TripsCount}, StopTimes: {StopTimesCount}", 
                 _stops.Count, _routes.Count, _trips.Count, _stopTimes.Count);
         }

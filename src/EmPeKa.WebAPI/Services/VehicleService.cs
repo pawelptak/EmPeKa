@@ -18,13 +18,15 @@ public class VehicleService : IVehicleService
     private readonly IMemoryCache _cache;
     private readonly ILogger<VehicleService> _logger;
     private readonly IGtfsService _gtfsService;
+    private readonly SemaphoreSlim _semaphore; // Limit concurrent API calls
     
     private const string CacheKey = "vehicle_positions";
     private const string TramLinesCacheKey = "tram_lines";
     private const string BusLinesCacheKey = "bus_lines";
     private const string ApiUrl = "https://mpk.wroc.pl/bus_position";
-    private readonly TimeSpan _cacheDuration = TimeSpan.FromSeconds(30); // Cache for 30 seconds
+    private readonly TimeSpan _cacheDuration = TimeSpan.FromSeconds(45); // Increased cache time
     private readonly TimeSpan _linesCacheDuration = TimeSpan.FromHours(1); // Cache lines for 1 hour
+    private const int MaxConcurrentRequests = 5; // Limit concurrent HTTP requests
 
     public VehicleService(HttpClient httpClient, IMemoryCache cache, ILogger<VehicleService> logger, IGtfsService gtfsService)
     {
@@ -32,6 +34,7 @@ public class VehicleService : IVehicleService
         _cache = cache;
         _logger = logger;
         _gtfsService = gtfsService;
+        _semaphore = new SemaphoreSlim(MaxConcurrentRequests, MaxConcurrentRequests);
     }
 
     public async Task<List<VehiclePosition>> GetVehiclePositionsAsync()
@@ -94,20 +97,41 @@ public class VehicleService : IVehicleService
 
     private async Task<List<VehiclePosition>> GetVehiclesByTypeAsync(string vehicleType, List<string> lines)
     {
-        var tasks = lines.Select(async line => {
-            try
-            {
-                return await GetVehiclesForLineAndTypeAsync(line, vehicleType);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Failed to get {VehicleType} positions for line {Line}", vehicleType, line);
-                return new List<VehiclePosition>();
-            }
-        }).ToList();
+        var allResults = new List<VehiclePosition>();
+        
+        // Process lines in smaller batches to avoid overwhelming the system
+        const int batchSize = 10;
+        for (int i = 0; i < lines.Count; i += batchSize)
+        {
+            var batch = lines.Skip(i).Take(batchSize);
+            var tasks = batch.Select(async line => {
+                await _semaphore.WaitAsync(); // Limit concurrent requests
+                try
+                {
+                    return await GetVehiclesForLineAndTypeAsync(line, vehicleType);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to get {VehicleType} positions for line {Line}", vehicleType, line);
+                    return new List<VehiclePosition>();
+                }
+                finally
+                {
+                    _semaphore.Release();
+                }
+            }).ToList();
 
-        var results = await Task.WhenAll(tasks);
-        return results.SelectMany(x => x).ToList();
+            var batchResults = await Task.WhenAll(tasks);
+            allResults.AddRange(batchResults.SelectMany(x => x));
+            
+            // Small delay between batches to prevent overwhelming the API
+            if (i + batchSize < lines.Count)
+            {
+                await Task.Delay(100);
+            }
+        }
+        
+        return allResults;
     }
 
     private async Task<List<VehiclePosition>> GetVehiclesForLineAndTypeAsync(string line, string vehicleType)

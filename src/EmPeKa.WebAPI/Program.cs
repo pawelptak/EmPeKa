@@ -9,12 +9,29 @@ builder.Services.AddControllers();
 // Add OpenAPI/Swagger
 builder.Services.AddOpenApi();
 
-// Add HTTP client
-builder.Services.AddHttpClient<GtfsService>();
-builder.Services.AddHttpClient<VehicleService>();
+// Add HTTP client with timeouts and connection limits
+builder.Services.AddHttpClient<GtfsService>(client =>
+{
+    client.Timeout = TimeSpan.FromMinutes(5);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+{
+    MaxConnectionsPerServer = 2
+});
 
-// Add memory cache for vehicle positions
-builder.Services.AddMemoryCache();
+builder.Services.AddHttpClient<VehicleService>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+}).ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler()
+{
+    MaxConnectionsPerServer = 10 // Limit concurrent connections
+});
+
+// Add memory cache with size limit for vehicle positions
+builder.Services.AddMemoryCache(options =>
+{
+    options.SizeLimit = 50; // Limit cache size
+    options.CompactionPercentage = 0.2; // Remove 20% when limit reached
+});
 
 // Add custom services
 builder.Services.AddScoped<IGtfsService, GtfsService>();
@@ -52,11 +69,24 @@ if (app.Environment.IsDevelopment())
 app.UseAuthorization();
 app.MapControllers();
 
-// Initialize GTFS data on startup
-using (var scope = app.Services.CreateScope())
+// Initialize GTFS data asynchronously in background to avoid blocking startup
+_ = Task.Run(async () =>
 {
-    var gtfsService = scope.ServiceProvider.GetRequiredService<IGtfsService>();
-    await gtfsService.InitializeAsync();
-}
+    try
+    {
+        using var scope = app.Services.CreateScope();
+        var gtfsService = scope.ServiceProvider.GetRequiredService<IGtfsService>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogInformation("Starting background GTFS initialization...");
+        await gtfsService.InitializeAsync();
+        logger.LogInformation("Background GTFS initialization completed");
+    }
+    catch (Exception ex)
+    {
+        var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
+        var logger = loggerFactory.CreateLogger<Program>();
+        logger.LogError(ex, "Background GTFS initialization failed");
+    }
+});
 
 app.Run();
