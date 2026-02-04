@@ -47,6 +47,26 @@ namespace EmPeka.Frontend.Controllers
             return View();
         }
 
+        [HttpGet("api/arrivals/{stopCode}")]
+        public async Task<IActionResult> GetArrivalsJson(string stopCode, int? count)
+        {
+            try
+            {
+                string url = $"stops/{stopCode}/arrivals";
+                if (count.HasValue)
+                {
+                    url += $"?count={count.Value}";
+                }
+                var model = await _httpClient.GetFromJsonAsync<ArrivalsResponse>(url);
+                return Json(model ?? new ArrivalsResponse { StopCode = stopCode, StopName = "Brak danych", Arrivals = [] });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch arrivals for stop {StopCode}", stopCode);
+                return StatusCode(500, new { error = "Nie uda³o siê pobraæ danych z API." });
+            }
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

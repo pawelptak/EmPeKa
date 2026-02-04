@@ -135,8 +135,85 @@
         }
     }
 </style>
+
 <script>
-    setTimeout(function() {
-        window.location.reload();
-    }, 30000); // 30000 ms = 30 sekund
+    const urlParams = new URLSearchParams(window.location.search);
+    const stopCode = urlParams.get('stopCode') || '10606';
+    const count = urlParams.get('count');
+
+    async function updateArrivals() {
+        try {
+            let url = `/api/arrivals/${stopCode}`;
+            if (count) {
+                url += `?count=${count}`;
+            }
+
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            const timestampEl = document.querySelector('.timestamp');
+            if (timestampEl) {
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('pl-PL', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                });
+                const timeStr = now.toLocaleTimeString('pl-PL', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                timestampEl.textContent = `${dateStr} ${timeStr}`;
+            }
+
+            const stopNameEl = document.querySelector('.stop-name');
+            if (stopNameEl) {
+                stopNameEl.textContent = `${data.stopName.toUpperCase()} (${data.stopCode})`;
+            }
+
+            const arrivalsContainer = document.querySelector('.arrivals');
+            if (arrivalsContainer && data.arrivals && data.arrivals.length > 0) {
+                let newContent = `
+                    <div class="arrival-row" style="font-weight:bold; text-transform:uppercase; color: white; background: black; font-family: Segoe UI, Roboto, Arial, sans-serif">
+                        <div class="line">LINIA</div>
+                        <div class="direction">KIERUNEK</div>
+                        <div class="eta">PLANOWO</div>
+                        <div class="eta">ODJAZD</div>
+                    </div>`;
+                
+                data.arrivals.forEach(arrival => {
+                    newContent += `
+                        <div class="arrival-row ${arrival.isRealTime ? 'rt' : 'tt'}">
+                            <div class="line">${arrival.line}</div>
+                            <div class="direction">${arrival.direction}</div>
+                            <div class="eta">${arrival.scheduledDeparture ? arrival.scheduledDeparture.substring(0, 5) : ''}</div>
+                            <div class="eta">${arrival.etaMin} min</div>
+                        </div>`;
+                });
+                
+                arrivalsContainer.innerHTML = newContent;
+            } else if (arrivalsContainer) {
+                arrivalsContainer.innerHTML = '<div class="empty">Brak nadchodzących odjazdów.</div>';
+            }
+
+        } catch (error) {
+            console.error('Błąd podczas pobierania danych:', error);
+        }
+    }
+
+    setInterval(updateArrivals, 30000);
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const timestampEl = document.querySelector('.timestamp');
+        if (timestampEl) {
+            timestampEl.style.cursor = 'pointer';
+            timestampEl.title = 'Kliknij aby odświeżyć dane';
+            timestampEl.addEventListener('click', updateArrivals);
+        }
+    });
 </script>
