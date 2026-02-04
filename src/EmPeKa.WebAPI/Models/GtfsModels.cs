@@ -70,3 +70,36 @@ public class StopTime
     [Name("stop_sequence")]
     public int StopSequence { get; set; }
 }
+
+public class Calendar
+{
+    [Name("service_id")]
+    public required string ServiceId { get; set; }
+    
+    [Name("monday")]
+    public int Monday { get; set; }
+    
+    [Name("tuesday")]
+    public int Tuesday { get; set; }
+    
+    [Name("wednesday")]
+    public int Wednesday { get; set; }
+    
+    [Name("thursday")]
+    public int Thursday { get; set; }
+    
+    [Name("friday")]
+    public int Friday { get; set; }
+    
+    [Name("saturday")]
+    public int Saturday { get; set; }
+    
+    [Name("sunday")]
+    public int Sunday { get; set; }
+    
+    [Name("start_date")]
+    public string StartDate { get; set; } = string.Empty;
+    
+    [Name("end_date")]
+    public string EndDate { get; set; } = string.Empty;
+}
