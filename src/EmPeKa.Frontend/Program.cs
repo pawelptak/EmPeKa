@@ -11,6 +11,13 @@ builder.Services.AddHttpClient("EmPeKaApi", client =>
 
 var app = builder.Build();
 
+var basePath = builder.Configuration.GetValue<string>("BasePath");
+
+if (!string.IsNullOrEmpty(basePath))
+{
+    app.UsePathBase(basePath);
+}
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
