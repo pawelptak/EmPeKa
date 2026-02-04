@@ -98,8 +98,14 @@
         align-items: center;
         padding: 1rem;
     }
-    /*     .arrival-row.rt { box-shadow: 0 0 12px rgba(255, 140, 0, 0.35); }
-     */ .line {
+
+        .arrival-row:first-child {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+    .line {
         font-size: 2rem
     }
 
@@ -118,20 +124,153 @@
     }
 
     @@media (max-width: 768px) {
+        .fullscreen {
+            border-width: 20px;
+        }
+
         .arrival-row {
-            grid-template-columns: 90px 1fr 120px;
+            grid-template-columns: 70px 1fr 80px 80px;
+            gap: 0.5rem;
+            padding: 0.75rem 0.5rem;
+        }
+
+            .arrival-row:first-child .line,
+            .arrival-row:first-child .direction,
+            .arrival-row:first-child .eta {
+                font-size: 1.1rem;
+            }
+
+        .header {
+            margin-bottom: 1rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
         }
 
         .stop-name {
+            font-size: 1.8rem;
+        }
+
+        .timestamp {
             font-size: 2rem;
         }
 
         .direction {
-            font-size: 1.4rem;
+            font-size: 1.2rem;
         }
 
         .eta, .line {
+            font-size: 1.4rem;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .fullscreen {
+            border-width: 15px;
+        }
+
+        .arrival-row {
+            grid-template-columns: 55px 1fr 65px 65px;
+            gap: 0.25rem;
+            padding: 0.5rem 0.25rem;
+        }
+
+            .arrival-row:first-child .line,
+            .arrival-row:first-child .direction,
+            .arrival-row:first-child .eta {
+                font-size: 0.9rem;
+            }
+
+        .stop-name {
+            font-size: 1.5rem;
+        }
+
+        .timestamp {
             font-size: 1.6rem;
+        }
+
+        .direction {
+            font-size: 1rem;
+            line-height: 1.2;
+        }
+
+        .eta, .line {
+            font-size: 1.2rem;
+        }
+
+        .empty {
+            font-size: 1.5rem;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .fullscreen {
+            border-width: 10px;
+        }
+
+        .arrival-row {
+            grid-template-columns: 50px 1fr 55px 55px;
+            gap: 0.2rem;
+            padding: 0.4rem 0.2rem;
+        }
+
+            .arrival-row:first-child .line,
+            .arrival-row:first-child .direction,
+            .arrival-row:first-child .eta {
+                font-size: 0.8rem;
+            }
+
+        .header {
+            gap: 0.25rem;
+        }
+
+        .stop-name {
+            font-size: 1.25rem;
+        }
+
+        .timestamp {
+            font-size: 1.4rem;
+        }
+
+        .direction {
+            font-size: 0.9rem;
+        }
+
+        .eta, .line {
+            font-size: 1rem;
+        }
+
+        .empty {
+            font-size: 1.25rem;
+        }
+    }
+
+    @@media (max-width: 360px) {
+        .arrival-row {
+            grid-template-columns: 45px 1fr 50px 50px;
+            padding: 0.3rem 0.15rem;
+        }
+
+            .arrival-row:first-child .line,
+            .arrival-row:first-child .direction,
+            .arrival-row:first-child .eta {
+                font-size: 0.7rem;
+            }
+
+        .stop-name {
+            font-size: 1.1rem;
+        }
+
+        .timestamp {
+            font-size: 1.2rem;
+        }
+
+        .direction {
+            font-size: 0.8rem;
+        }
+
+        .eta, .line {
+            font-size: 0.9rem;
         }
     }
 </style>
@@ -152,9 +291,9 @@
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            
+
             const data = await response.json();
-            
+
             const timestampEl = document.querySelector('.timestamp');
             if (timestampEl) {
                 const now = new Date();
@@ -185,7 +324,7 @@
                         <div class="eta">PLANOWO</div>
                         <div class="eta">ODJAZD</div>
                     </div>`;
-                
+
                 data.arrivals.forEach(arrival => {
                     newContent += `
                         <div class="arrival-row ${arrival.isRealTime ? 'rt' : 'tt'}">
@@ -195,7 +334,7 @@
                             <div class="eta">${arrival.etaMin} min</div>
                         </div>`;
                 });
-                
+
                 arrivalsContainer.innerHTML = newContent;
             } else if (arrivalsContainer) {
                 arrivalsContainer.innerHTML = '<div class="empty">Brak nadchodzących odjazdów.</div>';
