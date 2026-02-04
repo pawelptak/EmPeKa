@@ -1,6 +1,8 @@
 ﻿@model EmPeka.Frontend.Models.ArrivalsResponse
+@inject IConfiguration Configuration
 @{
     ViewData["Title"] = $"{Model.StopName} ({Model.StopCode})";
+    var basePath = Configuration.GetValue<string>("BasePath") ?? string.Empty;
 }
 
 
@@ -276,18 +278,19 @@
 </style>
 
 <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const stopCode = urlParams.get('stopCode') || '10606';
-    const count = urlParams.get('count');
+const basePath = '@Html.Raw(basePath)';
+const urlParams = new URLSearchParams(window.location.search);
+const stopCode = urlParams.get('stopCode') || '10606';
+const count = urlParams.get('count');
 
-    async function updateArrivals() {
-        try {
-            let url = `/api/arrivals/${stopCode}`;
-            if (count) {
-                url += `?count=${count}`;
-            }
+async function updateArrivals() {
+    try {
+        let url = `${basePath}/api/arrivals/${stopCode}`;
+        if (count) {
+            url += `?count=${count}`;
+        }
 
-            const response = await fetch(url);
+        const response = await fetch(url);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
