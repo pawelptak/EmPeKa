@@ -12,6 +12,7 @@ services:
       - DOTNET_gcConcurrent=1
       - DOTNET_GCHeapCount=2
       - DOTNET_GCHighMemPercent=75
+      - TZ=Europe/Warsaw
     volumes:
       - ./data:/app/data
     restart: unless-stopped
@@ -32,6 +33,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://0.0.0.0:8080
       - EmPeKaApi__BaseUrl=http://empeka-api:8080/
+      - TZ=Europe/Warsaw
     restart: unless-stopped
     # healthcheck:
     #   test: ["CMD", "curl", "-f", "http://localhost:8080/"]
