@@ -34,7 +34,7 @@ builder.Services.AddMemoryCache(options =>
 });
 
 // Add custom services
-builder.Services.AddScoped<IGtfsService, GtfsService>();
+builder.Services.AddSingleton<IGtfsService, GtfsService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<ITransitService, TransitService>();
 

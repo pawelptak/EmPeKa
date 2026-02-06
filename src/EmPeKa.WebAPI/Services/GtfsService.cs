@@ -115,30 +115,34 @@ public class GtfsService : IGtfsService
         const string baseUrl = "https://www.wroclaw.pl/open-data/87b09b32-f076-4475-8ec9-6020ed1f9ac0/OtwartyWroclaw_rozklad_jazdy_GTFS_";
         const string urlSuffix = ".zip";
         
-        // Generate potential URLs for the next 30 days (starting from today)
+        // Najpierw sprawdzamy daty wstecz (od najnowszej do najstarszej), potem do przodu
         var today = DateTime.Now.Date;
-        var potentialUrls = new List<string>();
-        
-        for (int i = 0; i < 30; i++)
-        {
-            var date = today.AddDays(i);
-            var dateString = date.ToString("ddMMyyyy");
-            potentialUrls.Add($"{baseUrl}{dateString}{urlSuffix}");
-        }
-        
-        // Also try some dates from the past (in case we missed an update)
+        var urlsPast = new List<string>();
+        var urlsFuture = new List<string>();
+
+        // Przesz³oœæ: od wczoraj do 7 dni wstecz
         for (int i = 1; i <= 7; i++)
         {
             var date = today.AddDays(-i);
             var dateString = date.ToString("ddMMyyyy");
-            potentialUrls.Add($"{baseUrl}{dateString}{urlSuffix}");
+            urlsPast.Add($"{baseUrl}{dateString}{urlSuffix}");
         }
-        
-        _logger.LogInformation("Searching for valid GTFS URL among {Count} candidates", potentialUrls.Count);
-        
+        // Dziœ
+        urlsFuture.Add($"{baseUrl}{today:ddMMyyyy}{urlSuffix}");
+        // Przysz³oœæ: od jutra do 29 dni do przodu
+        for (int i = 1; i < 30; i++)
+        {
+            var date = today.AddDays(i);
+            var dateString = date.ToString("ddMMyyyy");
+            urlsFuture.Add($"{baseUrl}{dateString}{urlSuffix}");
+        }
+
+        var allUrls = urlsPast.Concat(urlsFuture).ToList();
+        _logger.LogInformation("Searching for valid GTFS URL among {Count} candidates (past first)", allUrls.Count);
+
         // Test URLs in parallel (but limited concurrency)
         var semaphore = new SemaphoreSlim(5, 5); // Max 5 concurrent requests
-        var tasks = potentialUrls.Select(async url =>
+        var tasks = allUrls.Select(async url =>
         {
             await semaphore.WaitAsync();
             try
@@ -161,15 +165,15 @@ public class GtfsService : IGtfsService
                 semaphore.Release();
             }
         }).ToArray();
-        
+
         var results = await Task.WhenAll(tasks);
         var validUrl = results.FirstOrDefault(url => url != null);
-        
+
         if (validUrl != null)
         {
             return validUrl;
         }
-        
+
         // Fallback to a known working URL (update this manually if needed)
         var fallbackUrl = $"{baseUrl}02022026{urlSuffix}";
         _logger.LogWarning("No valid GTFS URL found, using fallback: {Url}", fallbackUrl);
@@ -179,13 +183,21 @@ public class GtfsService : IGtfsService
     private async Task LoadGtfsData()
     {
         var extractPath = Path.Combine(_gtfsDataPath, "extracted");
-        
-        _stops = await LoadCsvFile<Stop>(Path.Combine(extractPath, "stops.txt"));
-        _routes = await LoadCsvFile<GtfsRoute>(Path.Combine(extractPath, "routes.txt"));
-        _trips = await LoadCsvFile<Trip>(Path.Combine(extractPath, "trips.txt"));
-        _stopTimes = await LoadCsvFile<StopTime>(Path.Combine(extractPath, "stop_times.txt"));
-        _calendar = await LoadCsvFile<EmPeKa.Models.Calendar>(Path.Combine(extractPath, "calendar.txt"));
-        
+
+        var stopsTask = LoadCsvFile<Stop>(Path.Combine(extractPath, "stops.txt"));
+        var routesTask = LoadCsvFile<GtfsRoute>(Path.Combine(extractPath, "routes.txt"));
+        var tripsTask = LoadCsvFile<Trip>(Path.Combine(extractPath, "trips.txt"));
+        var stopTimesTask = LoadCsvFile<StopTime>(Path.Combine(extractPath, "stop_times.txt"));
+        var calendarTask = LoadCsvFile<EmPeKa.Models.Calendar>(Path.Combine(extractPath, "calendar.txt"));
+
+        await Task.WhenAll(stopsTask, routesTask, tripsTask, stopTimesTask, calendarTask);
+
+        _stops = stopsTask.Result;
+        _routes = routesTask.Result;
+        _trips = tripsTask.Result;
+        _stopTimes = stopTimesTask.Result;
+        _calendar = calendarTask.Result;
+
         // Pre-compute stop to lines mapping for performance
         _stopToLinesMap = BuildStopToLinesMap();
     }
@@ -193,29 +205,28 @@ public class GtfsService : IGtfsService
     private Dictionary<string, List<string>> BuildStopToLinesMap()
     {
         _logger.LogInformation("Building stop to lines mapping...");
-        
+
         // Create lookups for performance
         var tripToRoute = _trips.ToDictionary(t => t.TripId, t => t.RouteId);
         var routeToShortName = _routes
             .Where(r => !string.IsNullOrEmpty(r.RouteShortName))
             .ToDictionary(r => r.RouteId, r => r.RouteShortName);
-        
-        // Group stop times by stop ID and collect unique lines
-        var stopToLines = _stopTimes
-            .Where(st => tripToRoute.ContainsKey(st.TripId))
-            .GroupBy(st => st.StopId, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(
-                group => group.Key,
-                group => group
-                    .Select(st => tripToRoute[st.TripId])
-                    .Where(routeId => routeToShortName.ContainsKey(routeId))
-                    .Select(routeId => routeToShortName[routeId])
-                    .Distinct()
-                    .OrderBy(name => name)
-                    .ToList(),
-                StringComparer.OrdinalIgnoreCase
-            );
-        
+
+        // Group stop times by stop ID and collect unique lines using SortedSet for uniqueness and ordering
+        var stopToLines = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var group in _stopTimes.Where(st => tripToRoute.ContainsKey(st.TripId)).GroupBy(st => st.StopId, StringComparer.OrdinalIgnoreCase))
+        {
+            var set = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var st in group)
+            {
+                if (tripToRoute.TryGetValue(st.TripId, out var routeId) && routeToShortName.TryGetValue(routeId, out var shortName))
+                {
+                    set.Add(shortName);
+                }
+            }
+            stopToLines[group.Key] = set.ToList();
+        }
+
         _logger.LogInformation("Stop to lines mapping completed. Mapped {Count} stops", stopToLines.Count);
         return stopToLines;
     }
@@ -228,7 +239,7 @@ public class GtfsService : IGtfsService
             return new List<T>();
         }
 
-        using var reader = new StringReader(await File.ReadAllTextAsync(filePath));
+        using var reader = new StreamReader(filePath);
         using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
         return csv.GetRecords<T>().ToList();
     }

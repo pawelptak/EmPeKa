@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="BenchmarkSuite/BenchmarkSuite.csproj" />
   <Project Path="EmPeKa.Frontend/EmPeKa.Frontend.csproj" Id="15b450e8-318e-452f-8970-3bc891868add" />
   <Project Path="EmPeKa.WebAPI.Tests/EmPeKa.WebAPI.Tests.csproj" Id="d3ef9166-052c-43dc-8d6f-7d0b4dafb0de" />
   <Project Path="EmPeKa.WebAPI/EmPeKa.WebAPI.csproj" />
