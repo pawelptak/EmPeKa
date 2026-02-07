@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using System;
+using EmPeKa.WebAPI.Interfaces;
 
 [IterationCount(20)]
 public class StopsControllerBenchmarks

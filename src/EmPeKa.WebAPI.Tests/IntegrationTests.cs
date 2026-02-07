@@ -7,6 +7,7 @@ using Microsoft.Extensions.Caching.Memory;
 using EmPeKa.Services;
 using EmPeKa.Models;
 using System.Threading.Tasks;
+using EmPeKa.WebAPI.Interfaces;
 
 public class IntegrationTests
 {

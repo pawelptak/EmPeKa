@@ -9,6 +9,7 @@ using EmPeKa.Services;
 using EmPeKa.Models;
 using EmPeKa.Controllers;
 using System.Threading.Tasks;
+using EmPeKa.WebAPI.Interfaces;
 
 public class UnitTests
 {
@@ -344,52 +345,5 @@ public class UnitTests
         Assert.Equal(2, TestDateTime.Day);
         Assert.Equal(12, TestDateTime.Hour);
         Assert.Equal(30, TestDateTime.Minute);
-    }
-
-    [Fact]
-    public async Task Debug_CalendarData_CheckActiveDateRanges()
-    {
-        // Arrange
-        var service = CreateRealGtfsService();
-        await service.InitializeAsync();
-
-        // Act
-        var calendarData = await service.GetCalendarDataAsync();
-
-        // Assert & Debug logging
-        Assert.NotEmpty(calendarData);
-        
-        var today = DateTime.Now.Date; // 2026-02-07 (Friday)
-        var testDate = TestDateTime.Date; // 2026-02-02 (Monday)
-        
-        var activeForToday = calendarData.Where(c => 
-        {
-            if (DateTime.TryParseExact(c.StartDate, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out var start) &&
-                DateTime.TryParseExact(c.EndDate, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out var end))
-            {
-                return today >= start.Date && today <= end.Date && c.Friday == 1; // Friday
-            }
-            return false;
-        }).ToList();
-        
-        var activeForTestDate = calendarData.Where(c => 
-        {
-            if (DateTime.TryParseExact(c.StartDate, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out var start) &&
-                DateTime.TryParseExact(c.EndDate, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out var end))
-            {
-                return testDate >= start.Date && testDate <= end.Date && c.Monday == 1; // Monday
-            }
-            return false;
-        }).ToList();
-
-        // Log results for debugging
-        Console.WriteLine($"Today: {today:yyyy-MM-dd} (Friday) - Active services: {activeForToday.Count}");
-        Console.WriteLine($"Test date: {testDate:yyyy-MM-dd} (Monday) - Active services: {activeForTestDate.Count}");
-        
-        if (calendarData.Any())
-        {
-            var firstCalendar = calendarData.First();
-            Console.WriteLine($"Sample calendar entry: ServiceId={firstCalendar.ServiceId}, StartDate={firstCalendar.StartDate}, EndDate={firstCalendar.EndDate}");
-        }
     }
 }

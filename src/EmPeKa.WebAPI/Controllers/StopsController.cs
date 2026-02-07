@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using EmPeKa.Models;
 using EmPeKa.Services;
+using EmPeKa.WebAPI.Interfaces;
 
 namespace EmPeKa.Controllers;
 
@@ -54,25 +55,29 @@ public class StopsController : ControllerBase
     /// Gets upcoming arrivals for a specific stop
     /// </summary>
     /// <param name="stopCode">The stop code to get arrivals for</param>
+    /// <param name="count">Number of upcoming arrivals to return (default: 5)</param>
     /// <returns>List of upcoming arrivals</returns>
     [HttpGet("{stopCode}/arrivals")]
     [ProducesResponseType(typeof(ArrivalsResponse), 200)]
     [ProducesResponseType(404)]
-    public async Task<ActionResult<ArrivalsResponse>> GetArrivals(string stopCode, [FromQuery] int count = 3)
+    public async Task<ActionResult<ArrivalsResponse>> GetArrivals(string stopCode, [FromQuery] int count = 5)
     {
         try
         {
             _logger.LogInformation("Getting arrivals for stopCode: {StopCode} (count={Count})", stopCode, count);
             var arrivals = await _transitService.GetArrivalsAsync(stopCode, count);
+
             if (arrivals == null)
             {
                 return NotFound(new { error = $"Stop code '{stopCode}' not found" });
             }
+
             return Ok(arrivals);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting arrivals for stopCode {StopCode}", stopCode);
+
             return StatusCode(500, new { error = "Internal server error" });
         }
     }

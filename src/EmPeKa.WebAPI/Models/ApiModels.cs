@@ -16,7 +16,7 @@ public class ArrivalInfo
     public required string Direction { get; set; }
     public int EtaMin { get; set; }
     public bool IsRealTime { get; set; }
-    public string? ScheduledDeparture { get; set; } // Planowana godzina odjazdu (HH:mm:ss)
+    public string? ScheduledDeparture { get; set; }
 }
 
 public class StopsResponse

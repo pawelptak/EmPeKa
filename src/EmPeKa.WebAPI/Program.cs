@@ -1,4 +1,5 @@
 using EmPeKa.Services;
+using EmPeKa.WebAPI.Interfaces;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -77,14 +78,18 @@ _ = Task.Run(async () =>
         using var scope = app.Services.CreateScope();
         var gtfsService = scope.ServiceProvider.GetRequiredService<IGtfsService>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
         logger.LogInformation("Starting background GTFS initialization...");
+
         await gtfsService.InitializeAsync();
+
         logger.LogInformation("Background GTFS initialization completed");
     }
     catch (Exception ex)
     {
         var loggerFactory = app.Services.GetRequiredService<ILoggerFactory>();
         var logger = loggerFactory.CreateLogger<Program>();
+
         logger.LogError(ex, "Background GTFS initialization failed");
     }
 });
