@@ -5,7 +5,7 @@ using Moq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.AspNetCore.Mvc;
-using EmPeKa.Services;
+using EmPeKa.WebAPI.Services;
 using EmPeKa.Models;
 using EmPeKa.Controllers;
 using System.Threading.Tasks;
@@ -35,17 +35,17 @@ public class UnitTests
         {
             new VehiclePosition 
             { 
-                NazwaLinii = "1", 
-                DataAktualizacji = TestDateTime.AddMinutes(-2),
-                OstatniaPositionSzerokosc = 51.1071,
-                OstatniaPositionDlugosc = 17.0194
+                LineName = "1", 
+                LastUpdated = TestDateTime.AddMinutes(-2),
+                LastLatitude = 51.1071,
+                LastLongitude = 17.0194
             },
             new VehiclePosition 
             { 
-                NazwaLinii = "A", 
-                DataAktualizacji = TestDateTime.AddMinutes(-1),
-                OstatniaPositionSzerokosc = 51.0943,
-                OstatniaPositionDlugosc = 17.0322
+                LineName = "A", 
+                LastUpdated = TestDateTime.AddMinutes(-1),
+                LastLatitude = 51.0943,
+                LastLongitude = 17.0322
             }
         };
         cache.Set("vehicle_positions", vehicles);
@@ -146,9 +146,9 @@ public class UnitTests
 
         // Assert
         Assert.Equal(2, result.Count);
-        Assert.Contains(result, v => v.NazwaLinii == "1");
-        Assert.Contains(result, v => v.NazwaLinii == "A");
-        Assert.All(result, v => Assert.True(v.DataAktualizacji > TestDateTime.AddMinutes(-5)));
+        Assert.Contains(result, v => v.LineName == "1");
+        Assert.Contains(result, v => v.LineName == "A");
+        Assert.All(result, v => Assert.True(v.LastUpdated > TestDateTime.AddMinutes(-5)));
     }
 
     [Fact]
@@ -268,7 +268,7 @@ public class UnitTests
 
         // Assert
         Assert.Single(result);
-        Assert.Equal("1", result[0].NazwaLinii);
+        Assert.Equal("1", result[0].LineName);
     }
 
     [Fact]

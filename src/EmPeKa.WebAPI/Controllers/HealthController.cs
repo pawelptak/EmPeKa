@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using EmPeKa.Services;
+using EmPeKa.WebAPI.Services;
 using EmPeKa.WebAPI.Interfaces;
 
 namespace EmPeKa.Controllers;
@@ -51,7 +51,7 @@ public class HealthController : ControllerBase
                 {
                     healthy = realtimeHealthy,
                     vehiclesCount = vehicles.Count,
-                    lastUpdate = vehicles.Any() ? vehicles.Max(v => v.DataAktualizacji) : (DateTime?)null
+                    lastUpdate = vehicles.Any() ? vehicles.Max(v => v.LastUpdated) : (DateTime?)null
                 }
             };
             

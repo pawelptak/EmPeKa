@@ -17,6 +17,7 @@ public class ArrivalInfo
     public int EtaMin { get; set; }
     public bool IsRealTime { get; set; }
     public string? ScheduledDeparture { get; set; }
+    public int? DelayMin { get; set; }
 }
 
 public class StopsResponse

@@ -1,6 +1,6 @@
 using CsvHelper;
 using EmPeKa.Models;
-using EmPeKa.Services;
+using EmPeKa.WebAPI.Services;
 using EmPeKa.WebAPI.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
@@ -12,7 +12,7 @@ namespace EmPeKa.WebAPI.Tests;
 /// </summary>
 public class TestGtfsService : IGtfsService
 {
-    private readonly ILogger<GtfsService> _logger;
+    private readonly ILogger _logger;
     private readonly string _gtfsDataPath;
 
     private List<Stop> _stops = [];
@@ -26,7 +26,7 @@ public class TestGtfsService : IGtfsService
 
     private bool _isInitialized = false;
 
-    public TestGtfsService(ILogger<GtfsService> logger, string testDataPath)
+    public TestGtfsService(ILogger logger, string testDataPath)
     {
         _logger = logger;
         _gtfsDataPath = testDataPath;

@@ -34,7 +34,7 @@
                         @a.ScheduledDeparture.Substring(0, 5)
                     </div>
                     <div class="eta">
-                        @a.EtaMin min
+                        @a.EtaMin min @if (@a.DelayMin != null) { <span style="color: red;">(@a.DelayMin min)</span> }
                     </div>
                 </div>
             }

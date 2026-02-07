@@ -4,7 +4,7 @@ using Xunit;
 using Moq;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Caching.Memory;
-using EmPeKa.Services;
+using EmPeKa.WebAPI.Services;
 using EmPeKa.Models;
 using System.Threading.Tasks;
 using EmPeKa.WebAPI.Interfaces;

@@ -3,7 +3,7 @@ using EmPeKa.WebAPI.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 using System.Text.Json;
 
-namespace EmPeKa.Services;
+namespace EmPeKa.WebAPI.Services;
 
 public class VehicleService : IVehicleService
 {
@@ -178,13 +178,11 @@ public class VehicleService : IVehicleService
                 .Select(mpkPos => new VehiclePosition
                 {
                     Id = (int)(mpkPos.K % int.MaxValue), // Use K as ID (truncate if needed)
-                    NrBoczny = mpkPos.K, // Use K as vehicle number
-                    NrRej = null, // Not available in new API
-                    Brygada = null, // Not available in new API
-                    NazwaLinii = mpkPos.Name,
-                    OstatniaPositionSzerokosc = mpkPos.X, // X is latitude
-                    OstatniaPositionDlugosc = mpkPos.Y, // Y is longitude
-                    DataAktualizacji = DateTime.Now // Use current time since API doesn't provide timestamp
+                    VehicleNumber = mpkPos.K, // Use K as vehicle number
+                    LineName = mpkPos.Name,
+                    LastLatitude = mpkPos.X, // X is latitude
+                    LastLongitude = mpkPos.Y, // Y is longitude
+                    LastUpdated = DateTime.Now // Use current time since API doesn't provide timestamp
                 }).ToList();
 
             _logger.LogInformation("Converted {ValidCount} valid positions out of {TotalCount} for {VehicleType} line {Line}",
@@ -205,7 +203,7 @@ public class VehicleService : IVehicleService
         var allPositions = await GetVehiclePositionsAsync();
 
         return allPositions
-            .Where(p => string.Equals(p.NazwaLinii, line, StringComparison.OrdinalIgnoreCase))
+            .Where(p => string.Equals(p.LineName, line, StringComparison.OrdinalIgnoreCase))
             .ToList();
     }
 

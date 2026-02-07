@@ -3,13 +3,11 @@ namespace EmPeKa.Models;
 public class VehiclePosition
 {
     public int Id { get; set; }
-    public long NrBoczny { get; set; }
-    public string? NrRej { get; set; }
-    public string? Brygada { get; set; }
-    public string? NazwaLinii { get; set; }
-    public double OstatniaPositionSzerokosc { get; set; }
-    public double OstatniaPositionDlugosc { get; set; }
-    public DateTime DataAktualizacji { get; set; }
+    public long VehicleNumber { get; set; }
+    public string? LineName { get; set; }
+    public double LastLatitude { get; set; }
+    public double LastLongitude { get; set; }
+    public DateTime LastUpdated { get; set; }
 }
 
 public class MpkVehiclePosition

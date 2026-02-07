@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using EmPeKa.Models;
-using EmPeKa.Services;
+using EmPeKa.WebAPI.Services;
 using EmPeKa.WebAPI.Interfaces;
 
 namespace EmPeKa.Controllers;

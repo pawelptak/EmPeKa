@@ -6,7 +6,7 @@ using System.IO.Compression;
 using Calendar = EmPeKa.Models.Calendar;
 using Route = EmPeKa.Models.Route;
 
-namespace EmPeKa.Services;
+namespace EmPeKa.WebAPI.Services;
 
 public class GtfsService : IGtfsService
 {
