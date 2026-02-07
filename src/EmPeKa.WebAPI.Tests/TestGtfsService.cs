@@ -126,9 +126,25 @@ public class TestGtfsService : IGtfsService
     public async Task<List<StopTime>> GetStopTimesForStopAsync(string stopId)
     {
         await InitializeAsync();
-
+        
+        // If no calendar data is available (test scenario), return all stop times without filtering
+        if (!_calendar.Any())
+        {
+            _logger.LogWarning("No calendar data available - returning all stop times without service filtering");
+            return _stopTimes
+                .Where(st => st.StopId.Equals(stopId, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+        
+        // Get active service IDs for today
+        var activeServiceIds = GetActiveServiceIds(DateTime.Now.Date);
+        
         return _stopTimes
             .Where(st => st.StopId.Equals(stopId, StringComparison.OrdinalIgnoreCase))
+            .Where(st => {
+                var trip = _trips.FirstOrDefault(t => t.TripId == st.TripId);
+                return trip != null && activeServiceIds.Contains(trip.ServiceId);
+            })
             .ToList();
     }
 
@@ -175,5 +191,51 @@ public class TestGtfsService : IGtfsService
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    private HashSet<string> GetActiveServiceIds(DateTime date)
+    {
+        var activeServices = new HashSet<string>();
+        var dayOfWeek = date.DayOfWeek;
+        
+        foreach (var calendar in _calendar)
+        {
+            // Check if the service is active on this day of week
+            bool isActiveToday = dayOfWeek switch
+            {
+                DayOfWeek.Monday => calendar.Monday == 1,
+                DayOfWeek.Tuesday => calendar.Tuesday == 1,
+                DayOfWeek.Wednesday => calendar.Wednesday == 1,
+                DayOfWeek.Thursday => calendar.Thursday == 1,
+                DayOfWeek.Friday => calendar.Friday == 1,
+                DayOfWeek.Saturday => calendar.Saturday == 1,
+                DayOfWeek.Sunday => calendar.Sunday == 1,
+                _ => false
+            };
+            
+            if (isActiveToday)
+            {
+                // Check if current date is within service period
+                if (DateTime.TryParseExact(calendar.StartDate, "yyyyMMdd", null, DateTimeStyles.None, out var startDate) &&
+                    DateTime.TryParseExact(calendar.EndDate, "yyyyMMdd", null, DateTimeStyles.None, out var endDate))
+                {
+                    if (date >= startDate.Date && date <= endDate.Date)
+                    {
+                        activeServices.Add(calendar.ServiceId);
+                    }
+                }
+            }
+        }
+        
+        _logger.LogInformation("Found {Count} active services for {Date} ({DayOfWeek}): {Services}", 
+            activeServices.Count, date.ToShortDateString(), dayOfWeek, string.Join(", ", activeServices));
+        
+        return activeServices;
+    }
+
+    public async Task<List<EmPeKa.Models.Calendar>> GetCalendarDataAsync()
+    {
+        await InitializeAsync();
+        return _calendar;
     }
 }

@@ -16,6 +16,7 @@ public interface IGtfsService
     Task<List<string>> GetAllLinesAsync();
     Task<List<string>> GetTramLinesAsync();
     Task<List<string>> GetBusLinesAsync();
+    Task<List<EmPeKa.Models.Calendar>> GetCalendarDataAsync(); // Debug method
 }
 
 public class GtfsService : IGtfsService
@@ -78,7 +79,7 @@ public class GtfsService : IGtfsService
     {
         var gtfsUrl = await FindValidGtfsUrlAsync();
         
-        _logger.LogInformation("Downloading GTFS data from {Url}", gtfsUrl);
+        _logger.LogWarning("USING GTFS URL: {Url}", gtfsUrl); // Changed to Warning to make it more visible
         
         var zipPath = Path.Combine(_gtfsDataPath, "gtfs.zip");
         var response = await _httpClient.GetAsync(gtfsUrl);
@@ -114,69 +115,58 @@ public class GtfsService : IGtfsService
     {
         const string baseUrl = "https://www.wroclaw.pl/open-data/87b09b32-f076-4475-8ec9-6020ed1f9ac0/OtwartyWroclaw_rozklad_jazdy_GTFS_";
         const string urlSuffix = ".zip";
-        
-        // Najpierw sprawdzamy daty wstecz (od najnowszej do najstarszej), potem do przodu
         var today = DateTime.Now.Date;
-        var urlsPast = new List<string>();
-        var urlsFuture = new List<string>();
+        var todayUrl = $"{baseUrl}{today:ddMMyyyy}{urlSuffix}";
 
-        // Przesz³oœæ: od wczoraj do 7 dni wstecz
+        // Najpierw sprawdzamy dzisiejszy plik
+        _logger.LogWarning("Checking GTFS URL for today ({Date}): {Url}", today.ToString("yyyy-MM-dd"), todayUrl);
+        try
+        {
+            var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, todayUrl));
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("? Found valid GTFS URL for today: {Url}", todayUrl);
+                return todayUrl;
+            }
+            else
+            {
+                _logger.LogWarning("? Today's URL returned {StatusCode}: {Url}", response.StatusCode, todayUrl);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning("? Today's URL {Url} is not accessible: {Error}", todayUrl, ex.Message);
+        }
+
+        // Jeœli nie ma dzisiejszego, sprawdzamy kolejne wstecz (od wczoraj do 7 dni wstecz)
         for (int i = 1; i <= 7; i++)
         {
             var date = today.AddDays(-i);
             var dateString = date.ToString("ddMMyyyy");
-            urlsPast.Add($"{baseUrl}{dateString}{urlSuffix}");
-        }
-        // Dziœ
-        urlsFuture.Add($"{baseUrl}{today:ddMMyyyy}{urlSuffix}");
-        // Przysz³oœæ: od jutra do 29 dni do przodu
-        for (int i = 1; i < 30; i++)
-        {
-            var date = today.AddDays(i);
-            var dateString = date.ToString("ddMMyyyy");
-            urlsFuture.Add($"{baseUrl}{dateString}{urlSuffix}");
-        }
-
-        var allUrls = urlsPast.Concat(urlsFuture).ToList();
-        _logger.LogInformation("Searching for valid GTFS URL among {Count} candidates (past first)", allUrls.Count);
-
-        // Test URLs in parallel (but limited concurrency)
-        var semaphore = new SemaphoreSlim(5, 5); // Max 5 concurrent requests
-        var tasks = allUrls.Select(async url =>
-        {
-            await semaphore.WaitAsync();
+            var url = $"{baseUrl}{dateString}{urlSuffix}";
+            _logger.LogWarning("Checking GTFS URL for past date ({Date}): {Url}", date.ToString("yyyy-MM-dd"), url);
             try
             {
                 var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
                 if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogInformation("Found valid GTFS URL: {Url}", url);
+                    _logger.LogWarning("? Found valid GTFS URL for past date: {Url}", url);
                     return url;
                 }
-                return null;
+                else
+                {
+                    _logger.LogWarning("? Past URL returned {StatusCode}: {Url}", response.StatusCode, url);
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogDebug("URL {Url} is not accessible: {Error}", url, ex.Message);
-                return null;
+                _logger.LogWarning("? Past URL {Url} is not accessible: {Error}", url, ex.Message);
             }
-            finally
-            {
-                semaphore.Release();
-            }
-        }).ToArray();
-
-        var results = await Task.WhenAll(tasks);
-        var validUrl = results.FirstOrDefault(url => url != null);
-
-        if (validUrl != null)
-        {
-            return validUrl;
         }
 
         // Fallback to a known working URL (update this manually if needed)
         var fallbackUrl = $"{baseUrl}02022026{urlSuffix}";
-        _logger.LogWarning("No valid GTFS URL found, using fallback: {Url}", fallbackUrl);
+        _logger.LogError("? No valid GTFS URL found, using fallback: {Url}", fallbackUrl);
         return fallbackUrl;
     }
 
@@ -332,6 +322,9 @@ public class GtfsService : IGtfsService
         var activeServices = new HashSet<string>();
         var dayOfWeek = date.DayOfWeek;
         
+        _logger.LogInformation("Looking for active services on {Date} ({DayOfWeek}), total calendar entries: {Count}", 
+            date.ToShortDateString(), dayOfWeek, _calendar.Count);
+        
         foreach (var calendar in _calendar)
         {
             // Check if the service is active on this day of week
@@ -353,11 +346,24 @@ public class GtfsService : IGtfsService
                 if (DateTime.TryParseExact(calendar.StartDate, "yyyyMMdd", null, DateTimeStyles.None, out var startDate) &&
                     DateTime.TryParseExact(calendar.EndDate, "yyyyMMdd", null, DateTimeStyles.None, out var endDate))
                 {
+                    _logger.LogDebug("Service {ServiceId}: StartDate={StartDate}, EndDate={EndDate}, Current={CurrentDate}, InRange={InRange}",
+                        calendar.ServiceId, startDate.ToShortDateString(), endDate.ToShortDateString(), 
+                        date.ToShortDateString(), date >= startDate.Date && date <= endDate.Date);
+                        
                     if (date >= startDate.Date && date <= endDate.Date)
                     {
                         activeServices.Add(calendar.ServiceId);
                     }
                 }
+                else
+                {
+                    _logger.LogWarning("Failed to parse dates for service {ServiceId}: StartDate='{StartDate}', EndDate='{EndDate}'",
+                        calendar.ServiceId, calendar.StartDate, calendar.EndDate);
+                }
+            }
+            else
+            {
+                _logger.LogDebug("Service {ServiceId} is not active on {DayOfWeek}", calendar.ServiceId, dayOfWeek);
             }
         }
         
@@ -365,6 +371,12 @@ public class GtfsService : IGtfsService
             activeServices.Count, date.ToShortDateString(), dayOfWeek, string.Join(", ", activeServices));
         
         return activeServices;
+    }
+
+    public async Task<List<EmPeKa.Models.Calendar>> GetCalendarDataAsync()
+    {
+        await InitializeAsync();
+        return _calendar;
     }
 
 }

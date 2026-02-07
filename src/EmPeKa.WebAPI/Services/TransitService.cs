@@ -40,6 +40,8 @@ public class TransitService : ITransitService
             var now = DateTime.Now;
             var currentTime = TimeSpan.Parse(now.ToString("HH:mm:ss"));
 
+            _logger.LogInformation("Found {Count} total stop times for stop {StopCode} (StopId: {StopId})", stopTimes.Count, stopCode, stop.StopId);
+
             // Get next arrivals (no grouping)
             var upcomingStopTimes = stopTimes
                 .Where(st => TimeSpan.TryParse(st.ArrivalTime, out var arrivalTime) && arrivalTime >= currentTime)
@@ -47,7 +49,7 @@ public class TransitService : ITransitService
                 .Take(20) // Limit to next 20 arrivals
                 .ToList();
 
-            _logger.LogInformation("Found {Count} upcoming stop times for stop {StopCode}", upcomingStopTimes.Count, stopCode);
+            _logger.LogInformation("Found {Count} upcoming stop times for stop {StopCode} (current time: {CurrentTime})", upcomingStopTimes.Count, stopCode, currentTime);
 
 
             // Ulepszony algorytm arrivals
