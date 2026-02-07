@@ -1,22 +1,22 @@
-@model IEnumerable<EmPeka.Frontend.Models.StopModel>
+ï»¿@model IEnumerable<EmPeka.Frontend.Models.StopModel>
 @{
-    ViewData["Title"] = "Lista przystanków";
+    ViewData["Title"] = "Lista przystankÃ³w";
 }
 <div class="container-fluid px-2">
-    <h2 class="mb-3">Lista przystanków</h2>
+    <h2 class="mb-3">Lista przystankÃ³w</h2>
     <div class="table-responsive">
         <table class="table table-striped table-hover">
             <thead class="table-dark">
-                <tr>
-                    <th class="text-nowrap">Nazwa</th>
-                    <th class="text-nowrap">Kod</th>
+                <tr class="pt-3">
+                    <th class="header text-nowrap">Nazwa</th>
+                    <th class="header text-nowrap">Kod</th>
                 </tr>
             </thead>
             <tbody>
             @foreach (var stop in Model)
             {
                 <tr>
-                    <td class="text-break">@stop.StopName</td>
+                    <td class="text-nowrap">@stop.StopName</td>
                     <td class="text-nowrap">@stop.StopCode</td>
                 </tr>
             }
@@ -24,3 +24,10 @@
         </table>
     </div>
 </div>
+
+<style>
+    .header{
+        text-align: left !important;
+        padding-bottom: 1em;
+    }
+</style>
