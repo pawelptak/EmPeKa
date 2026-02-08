@@ -1,9 +1,10 @@
 using CsvHelper;
-using EmPeKa.Models;
-using EmPeKa.Services;
+using EmPeKa.WebAPI.Models;
+using EmPeKa.WebAPI.Services;
 using EmPeKa.WebAPI.Interfaces;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
+using Calendar = EmPeKa.WebAPI.Models.Calendar;
 
 namespace EmPeKa.WebAPI.Tests;
 
@@ -19,7 +20,7 @@ public class TestGtfsService : IGtfsService
     private List<Route> _routes = [];
     private List<Trip> _trips = [];
     private List<StopTime> _stopTimes = [];
-    private List<Models.Calendar> _calendar = [];
+    private List<Calendar> _calendar = [];
 
     // Pre-computed mapping for performance
     private Dictionary<string, List<string>> _stopToLinesMap = [];
@@ -58,7 +59,7 @@ public class TestGtfsService : IGtfsService
         _routes = await LoadCsvFile<Route>(Path.Combine(extractPath, "routes.txt"));
         _trips = await LoadCsvFile<Trip>(Path.Combine(extractPath, "trips.txt"));
         _stopTimes = await LoadCsvFile<StopTime>(Path.Combine(extractPath, "stop_times.txt"));
-        _calendar = await LoadCsvFile<Models.Calendar>(Path.Combine(extractPath, "calendar.txt"));
+        _calendar = await LoadCsvFile<Calendar>(Path.Combine(extractPath, "calendar.txt"));
 
         // Pre-compute stop to lines mapping for performance
         _stopToLinesMap = BuildStopToLinesMap();
@@ -149,7 +150,7 @@ public class TestGtfsService : IGtfsService
             .ToList();
     }
 
-    public async Task<EmPeKa.Models.Route?> GetRouteAsync(string routeId)
+    public async Task<Route?> GetRouteAsync(string routeId)
     {
         await InitializeAsync();
         return _routes.FirstOrDefault(r => r.RouteId.Equals(routeId, StringComparison.OrdinalIgnoreCase));
@@ -234,7 +235,7 @@ public class TestGtfsService : IGtfsService
         return activeServices;
     }
 
-    public async Task<List<EmPeKa.Models.Calendar>> GetCalendarDataAsync()
+    public async Task<List<Calendar>> GetCalendarDataAsync()
     {
         await InitializeAsync();
         return _calendar;

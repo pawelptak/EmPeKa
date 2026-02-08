@@ -1,6 +1,6 @@
 using BenchmarkDotNet.Attributes;
-using EmPeKa.Controllers;
-using EmPeKa.Services;
+using EmPeKa.WebAPI.Controllers;
+using EmPeKa.WebAPI.Services;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;

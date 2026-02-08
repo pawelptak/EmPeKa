@@ -1,4 +1,4 @@
-namespace EmPeka.Frontend.Models
+namespace EmPeKa.Frontend.Models
 {
     public class StopModel
     {

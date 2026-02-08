@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using EmPeka.Frontend.Models;
+using EmPeKa.Frontend.Models;
 using System.Text.Json;
 
-namespace EmPeka.Frontend.Controllers
+namespace EmPeKa.Frontend.Controllers
 {
     public class StopsController : Controller
     {

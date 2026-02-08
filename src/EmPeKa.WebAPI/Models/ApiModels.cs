@@ -1,4 +1,4 @@
-namespace EmPeKa.Models;
+namespace EmPeKa.WebAPI.Models;
 
 public class StopInfo
 {
