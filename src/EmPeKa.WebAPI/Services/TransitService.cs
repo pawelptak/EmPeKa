@@ -1,7 +1,7 @@
-using EmPeKa.Models;
+using EmPeKa.WebAPI.Models;
 using EmPeKa.WebAPI.Interfaces;
 
-namespace EmPeKa.Services;
+namespace EmPeKa.WebAPI.Services;
 
 public class TransitService : ITransitService
 {
@@ -14,6 +14,51 @@ public class TransitService : ITransitService
         _gtfsService = gtfsService;
         _vehicleService = vehicleService;
         _logger = logger;
+    }
+
+    public async Task<List<ArrivalInfo>> GetArrivalsForStopsAsync(IEnumerable<string> stopCodes, int countPerStop = 3)
+    {
+        var allArrivals = new List<ArrivalInfo>();
+
+        // Materialize the enumeration to avoid multiple enumeration and to safely share across tasks.
+        var stopCodeList = stopCodes?.ToList() ?? new List<string>();
+
+        if (stopCodeList.Count == 0)
+        {
+            return allArrivals;
+        }
+
+        // Limit the number of concurrent requests to avoid overloading the upstream service.
+        const int maxDegreeOfParallelism = 5;
+        using var semaphore = new SemaphoreSlim(maxDegreeOfParallelism);
+
+        var tasks = stopCodeList.Select(async stopCode =>
+        {
+            await semaphore.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                var arrivalsResponse = await GetArrivalsAsync(stopCode, countPerStop).ConfigureAwait(false);
+                if (arrivalsResponse != null && arrivalsResponse.Arrivals != null)
+                {
+                    lock (allArrivals)
+                    {
+                        allArrivals.AddRange(arrivalsResponse.Arrivals);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to get arrivals for stopCode {StopCode}", stopCode);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
+
+        await Task.WhenAll(tasks);
+
+        return allArrivals.OrderBy(a => a.EtaMin).ToList();
     }
 
     public async Task<ArrivalsResponse?> GetArrivalsAsync(string stopCode, int count = 3)

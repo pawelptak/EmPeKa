@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using EmPeKa.Models;
-using EmPeKa.Services;
+using EmPeKa.WebAPI.Models;
 using EmPeKa.WebAPI.Interfaces;
 
-namespace EmPeKa.Controllers;
+namespace EmPeKa.WebAPI.Controllers;
 
 [ApiController]
 [Route("[controller]")]
@@ -78,6 +77,31 @@ public class StopsController : ControllerBase
         {
             _logger.LogError(ex, "Error getting arrivals for stopCode {StopCode}", stopCode);
 
+            return StatusCode(500, new { error = "Internal server error" });
+        }
+    }
+
+    /// <summary>
+    /// Gets upcoming arrivals for multiple stops
+    /// </summary>
+    /// <param name="request">Request with stop codes and count per stop</param>
+    /// <returns>List of upcoming arrivals from all requested stops, sorted by ETA</returns>
+    [HttpPost("arrivals/batch")]
+    [ProducesResponseType(typeof(List<ArrivalInfo>), 200)]
+    public async Task<ActionResult<List<ArrivalInfo>>> GetArrivalsForStops([FromBody] ArrivalsBatchRequest request)
+    {
+        if (request?.StopCodes == null || !request.StopCodes.Any())
+        {
+            return BadRequest(new { error = "No stop codes provided" });
+        }
+        try
+        {
+            var arrivals = await _transitService.GetArrivalsForStopsAsync(request.StopCodes, request.CountPerStop);
+            return Ok(arrivals);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting arrivals for multiple stops");
             return StatusCode(500, new { error = "Internal server error" });
         }
     }

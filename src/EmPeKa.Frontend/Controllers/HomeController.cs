@@ -1,8 +1,8 @@
-using EmPeka.Frontend.Models;
+using EmPeKa.Frontend.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
-namespace EmPeka.Frontend.Controllers
+namespace EmPeKa.Frontend.Controllers
 {
     public class HomeController : Controller
     {
@@ -15,36 +15,58 @@ namespace EmPeka.Frontend.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index(string? stopCode, int? count)
+        public async Task<IActionResult> Index(int? count)
         {
-            if (string.IsNullOrWhiteSpace(stopCode))
+            var stopCodes = Request.Query["stopCode"].ToList();
+
+            if (stopCodes.Count == 0)
             {
-                // Default example stop, user can change via query
-                stopCode = "10606";
+                stopCodes.Add("10606"); // Default example stop
             }
 
-            ArrivalsResponse? model = null;
+            if (stopCodes.Count == 1)
+            {
+                var stopCode = stopCodes.Single();
+                ArrivalsResponse? model = null;
+                try
+                {
+                    string url = $"stops/{stopCode}/arrivals";
+                    if (count.HasValue)
+                    {
+                        url += $"?count={count.Value}";
+                    }
+                    model = await _httpClient.GetFromJsonAsync<ArrivalsResponse>(url);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to fetch arrivals for stop {StopCode}", stopCode);
+                    ModelState.AddModelError(string.Empty, "Nie uda³o siê pobraæ danych z API.");
+                }
+
+                return View("Index", model ?? new ArrivalsResponse { StopCode = stopCode ?? string.Empty, StopName = "Brak danych", Arrivals = [] });
+            }
+
+            List<ArrivalItem>? batchArrivals = null;
+
             try
             {
-                string url = $"stops/{stopCode}/arrivals";
-                if (count.HasValue)
+                var batchRequest = new ArrivalsBatchRequest
                 {
-                    url += $"?count={count.Value}";
-                }
-                model = await _httpClient.GetFromJsonAsync<ArrivalsResponse>(url);
+                    StopCodes = stopCodes,
+                    CountPerStop = count ?? 3
+                };
+
+                var response = await _httpClient.PostAsJsonAsync("stops/arrivals/batch", batchRequest);
+                response.EnsureSuccessStatusCode();
+                batchArrivals = await response.Content.ReadFromJsonAsync<List<ArrivalItem>>();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to fetch arrivals for stop {StopCode}", stopCode);
+                _logger.LogError(ex, "Failed to fetch batch arrivals for stops {StopCodes}", string.Join(",", stopCodes));
                 ModelState.AddModelError(string.Empty, "Nie uda³o siê pobraæ danych z API.");
             }
 
-            return View(model ?? new ArrivalsResponse { StopCode = stopCode ?? string.Empty, StopName = "Brak danych", Arrivals = [] });
-        }
-
-        public IActionResult Privacy()
-        {
-            return View();
+            return View("BatchIndex", batchArrivals ?? new List<ArrivalItem>());
         }
 
         [HttpGet("api/arrivals/{stopCode}")]

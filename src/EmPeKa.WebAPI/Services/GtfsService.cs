@@ -1,12 +1,12 @@
 using CsvHelper;
-using EmPeKa.Models;
+using EmPeKa.WebAPI.Models;
 using EmPeKa.WebAPI.Interfaces;
 using System.Globalization;
 using System.IO.Compression;
-using Calendar = EmPeKa.Models.Calendar;
-using Route = EmPeKa.Models.Route;
+using Calendar = EmPeKa.WebAPI.Models.Calendar;
+using Route = EmPeKa.WebAPI.Models.Route;
 
-namespace EmPeKa.Services;
+namespace EmPeKa.WebAPI.Services;
 
 public class GtfsService : IGtfsService
 {

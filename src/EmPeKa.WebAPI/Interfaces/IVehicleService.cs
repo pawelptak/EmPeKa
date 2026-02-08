@@ -1,4 +1,4 @@
-﻿using EmPeKa.Models;
+﻿using EmPeKa.WebAPI.Models;
 
 namespace EmPeKa.WebAPI.Interfaces
 {

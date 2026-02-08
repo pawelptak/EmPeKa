@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using EmPeKa.Services;
+using EmPeKa.WebAPI.Services;
 using EmPeKa.WebAPI.Interfaces;
 
-namespace EmPeKa.Controllers;
+namespace EmPeKa.WebAPI.Controllers;
 
 [ApiController]
 [Route("[controller]")]

@@ -1,9 +1,9 @@
-using EmPeKa.Models;
+using EmPeKa.WebAPI.Models;
 using EmPeKa.WebAPI.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 using System.Text.Json;
 
-namespace EmPeKa.Services;
+namespace EmPeKa.WebAPI.Services;
 
 public class VehicleService : IVehicleService
 {

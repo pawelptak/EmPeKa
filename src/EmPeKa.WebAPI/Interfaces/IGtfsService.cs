@@ -1,5 +1,5 @@
-﻿using EmPeKa.Models;
-using Route = EmPeKa.Models.Route;
+﻿using EmPeKa.WebAPI.Models;
+using Route = EmPeKa.WebAPI.Models.Route;
 
 namespace EmPeKa.WebAPI.Interfaces
 {

@@ -1,4 +1,4 @@
-﻿@model EmPeka.Frontend.Models.ArrivalsResponse
+﻿@model EmPeKa.Frontend.Models.ArrivalsResponse
 @inject IConfiguration Configuration
 @{
     ViewData["Title"] = $"{Model.StopName} ({Model.StopCode})";
@@ -278,7 +278,7 @@
 </style>
 
 <script>
-const basePath = '@Html.Raw(basePath)';
+const basePath = @Json.Serialize(basePath);
 const urlParams = new URLSearchParams(window.location.search);
 const stopCode = urlParams.get('stopCode') || '10606';
 const count = urlParams.get('count');

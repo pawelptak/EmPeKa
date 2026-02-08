@@ -1,6 +1,6 @@
 using CsvHelper.Configuration.Attributes;
 
-namespace EmPeKa.Models;
+namespace EmPeKa.WebAPI.Models;
 
 public class Stop
 {

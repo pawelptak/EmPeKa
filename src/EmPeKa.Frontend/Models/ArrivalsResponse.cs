@@ -1,4 +1,4 @@
-namespace EmPeka.Frontend.Models;
+namespace EmPeKa.Frontend.Models;
 
 public class ArrivalsResponse
 {
@@ -13,5 +13,5 @@ public class ArrivalItem
     public string Direction { get; set; } = string.Empty;
     public int EtaMin { get; set; }
     public bool IsRealTime { get; set; }
-    public string? ScheduledDeparture { get; set; } // Planowy odjazd (hh:mm:ss)
+    public string? ScheduledDeparture { get; set; }
 }
