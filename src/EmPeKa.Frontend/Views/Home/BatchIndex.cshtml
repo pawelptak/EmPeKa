@@ -55,63 +55,20 @@
     .empty { font-size: 2rem; opacity: 0.8; }
 </style>
 
+<script src="~/js/refreshArrivals.js"></script>
 <script>
 const basePath = @Json.Serialize(basePath);
 const urlParams = new URLSearchParams(window.location.search);
 const stopCodes = urlParams.getAll('stopCode');
 const count = urlParams.get('count');
 
-async function updateBatchArrivals() {
-    try {
-        let url = `${basePath}/Home?`;
-        stopCodes.forEach(code => {
-            url += `stopCode=${encodeURIComponent(code)}&`;
-        });
-        if (count) {
-            url += `count=${count}&`;
-        }
-        url += 'partial=true';
-
-        const response = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const parser = new DOMParser();
-        const htmlDoc = parser.parseFromString(await response.text(), 'text/html');
-        const arrivals = htmlDoc.querySelector('.arrivals');
-        const arrivalsContainer = document.querySelector('.arrivals');
-        if (arrivals && arrivalsContainer) {
-            arrivalsContainer.innerHTML = arrivals.innerHTML;
-        }
-
-        const timestampEl = document.querySelector('.timestamp');
-        if (timestampEl) {
-            const now = new Date();
-            const dateStr = now.toLocaleDateString('pl-PL', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-            });
-            const timeStr = now.toLocaleTimeString('pl-PL', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-            timestampEl.textContent = `${dateStr} ${timeStr}`;
-        }
-    } catch (error) {
-        console.error('Błąd podczas pobierania danych:', error);
-    }
-}
-
-setInterval(updateBatchArrivals, 30000);
-
-document.addEventListener('DOMContentLoaded', function() {
-    const timestampEl = document.querySelector('.timestamp');
-    if (timestampEl) {
-        timestampEl.style.cursor = 'pointer';
-        timestampEl.title = 'Kliknij aby odświeżyć dane';
-        timestampEl.addEventListener('click', updateBatchArrivals);
-    }
+refreshArrivals({
+    basePath,
+    arrivalsSelector: '.arrivals',
+    timestampSelector: '.timestamp',
+    stopNameSelector: null,
+    apiType: 'batch',
+    stopCodes,
+    count
 });
 </script>
