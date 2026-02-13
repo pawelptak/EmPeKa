@@ -1,4 +1,4 @@
-// refreshArrivals.js
+ï»¿// refreshArrivals.js
 // Shared script for arrivals refresh (BatchIndex & Index)
 
 function refreshArrivals(options) {
@@ -107,7 +107,7 @@ function refreshArrivals(options) {
                     arrivalsContainer.innerHTML = '';
                     const emptyDiv = document.createElement('div');
                     emptyDiv.className = 'empty';
-                    emptyDiv.textContent = 'Brak nadchodz¹cych odjazdów.';
+                    emptyDiv.textContent = 'Brak nadchodzÄ…cych odjazdÃ³w.';
                     arrivalsContainer.appendChild(emptyDiv);
                 }
                 if (stopNameSelector && data.stopName && data.stopCode) {
@@ -128,7 +128,7 @@ function refreshArrivals(options) {
                 timestampEl.textContent = `${dateStr} ${timeStr}`;
             }
         } catch (error) {
-            console.error('B³¹d podczas pobierania danych:', error);
+            console.error('BÅ‚Ä…d podczas pobierania danych:', error);
         }
     }
 
@@ -137,7 +137,7 @@ function refreshArrivals(options) {
         const timestampEl = document.querySelector(timestampSelector);
         if (timestampEl) {
             timestampEl.style.cursor = 'pointer';
-            timestampEl.title = 'Kliknij aby odœwie¿yæ dane';
+            timestampEl.title = 'Kliknij aby odÅ›wieÅ¼yÄ‡ dane';
             timestampEl.addEventListener('click', update);
         }
     });

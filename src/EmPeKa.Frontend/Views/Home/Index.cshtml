@@ -9,7 +9,9 @@
 <div class="fullscreen">
     <div class="header">
         <div class="timestamp">@DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss")</div>
-        <div class="stop-name">@Model.StopName.ToUpper() (@Model.StopCode)</div>
+        <div class="stop-name" id="stopNameClickable" style="cursor:pointer">
+            @Model.StopName.ToUpper() (@Model.StopCode)
+        </div>
     </div>
 
     <div class="arrivals">
@@ -278,19 +280,36 @@
 </style>
 
 <script src="~/js/refreshArrivals.js"></script>
-<script>
-const basePath = @Json.Serialize(basePath);
-const urlParams = new URLSearchParams(window.location.search);
-const stopCode = urlParams.get('stopCode') || '10606';
-const count = urlParams.get('count');
 
-refreshArrivals({
-    basePath,
-    arrivalsSelector: '.arrivals',
-    timestampSelector: '.timestamp',
-    stopNameSelector: '.stop-name',
-    apiType: 'single',
-    stopCodes: [stopCode],
-    count
-});
+<script>
+    const stopName = document.getElementById('stopNameClickable');
+    if (stopName) {
+        stopName.addEventListener('click', function() {
+            const current = stopName.textContent.match(/\((\d+)\)/);
+            const defaultCode = current ? current[1] : '';
+            const code = prompt('Podaj numer przystanku:', defaultCode);
+            if (code && /^\d+$/.test(code.trim())) {
+                const trimmedCode = code.trim();
+                const url = new URL(window.location.href);
+                url.searchParams.set('stopCode', trimmedCode);
+                window.location.href = url.toString();
+            }
+        });
+    }
+</script>
+<script>
+    const basePath = @Json.Serialize(basePath);
+    const urlParams = new URLSearchParams(window.location.search);
+    const stopCode = urlParams.get('stopCode') || '10606';
+    const count = urlParams.get('count');
+
+    refreshArrivals({
+        basePath,
+        arrivalsSelector: '.arrivals',
+        timestampSelector: '.timestamp',
+        stopNameSelector: '.stop-name',
+        apiType: 'single',
+        stopCodes: [stopCode],
+        count
+    });
 </script>
